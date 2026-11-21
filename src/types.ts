@@ -117,3 +117,14 @@ export interface ActiveReminder {
   targetTab: AppTab;
   relatedId: string;
 }
+
+export interface StudentProfile {
+  uid: string;
+  name: string;
+  gmail: string;
+  semester: string;
+  level: string;
+  photoURL: string;
+  profileCompleted: boolean;
+}
+

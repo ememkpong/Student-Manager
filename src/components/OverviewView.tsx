@@ -11,6 +11,7 @@ import type {
   BudgetLimits,
   ScheduleBlock,
   StudentClass,
+  StudentProfile,
   TodoTask,
   Transaction,
 } from "../types";
@@ -29,6 +30,8 @@ import { CategorySpendingChart } from "./CategorySpendingChart";
 import { WeeklySpendingChart } from "./WeeklySpendingChart";
 
 interface OverviewViewProps {
+  profile: StudentProfile | null;
+  onEditProfile: () => void;
   nextClass: NextClassInfo | null;
   classes: StudentClass[];
   scheduleBlocks: ScheduleBlock[];
@@ -43,6 +46,8 @@ interface OverviewViewProps {
 }
 
 export function OverviewView({
+  profile,
+  onEditProfile,
   nextClass,
   scheduleBlocks,
   tasks,
@@ -97,8 +102,32 @@ export function OverviewView({
     setQuickTaskTitle("");
   };
 
+  const firstName = profile?.name?.trim().split(/\s+/)[0] || "Student";
+  const academicMeta = [profile?.semester?.trim(), profile?.level?.trim(), profile?.gmail?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="space-y-6">
+      {/* Student Profile Header */}
+      <section className="bg-white border border-violet-200/80 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold text-slate-900 truncate">
+            Welcome, {firstName}
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 truncate">
+            {academicMeta || "Set your semester, academic level, and Gmail."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onEditProfile}
+          className="px-3 py-1.5 rounded-lg border border-violet-200 bg-violet-50/50 text-xs font-medium text-violet-800 hover:bg-violet-100/70 transition-colors whitespace-nowrap shrink-0 self-start sm:self-auto"
+        >
+          Edit Student Info
+        </button>
+      </section>
+
       {/* 4-Column KPI Strip */}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white border border-violet-200/80 rounded-xl p-5">

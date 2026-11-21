@@ -4,13 +4,15 @@ import {
   CalendarClock,
   CheckSquare,
   LayoutDashboard,
+  LogOut,
+  Pencil,
   RotateCcw,
   Volume2,
   VolumeX,
   Wallet,
   X,
 } from "lucide-react";
-import type { AppTab } from "../types";
+import type { AppTab, StudentProfile } from "../types";
 import type { NextClassInfo } from "../hooks/useReminders";
 import { formatTime12h } from "../utils/dateUtils";
 
@@ -22,6 +24,9 @@ interface SidebarProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onResetDemoData: () => void;
+  profile: StudentProfile | null;
+  onEditProfile: () => void;
+  onSignOut: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -34,6 +39,16 @@ const NAV_ITEMS: { id: AppTab; label: string; icon: typeof LayoutDashboard }[] =
   { id: "money", label: "Money", icon: Wallet },
 ];
 
+function getInitials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "ST";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 export function Sidebar({
   activeTab,
   onSelectTab,
@@ -42,10 +57,20 @@ export function Sidebar({
   soundEnabled,
   onToggleSound,
   onResetDemoData,
+  profile,
+  onEditProfile,
+  onSignOut,
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
   const [imgError, setImgError] = useState(false);
+
+  const displayName = profile?.name?.trim() || "Student";
+  const displayGmail = profile?.gmail?.trim() || "";
+  const semesterLevel = [profile?.semester?.trim(), profile?.level?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const initials = getInitials(displayName);
 
   const content = (
     <div className="flex h-full flex-col justify-between bg-white border-r border-violet-200/70 px-4 py-5">
@@ -141,31 +166,47 @@ export function Sidebar({
 
       {/* Bottom Student Footer */}
       <div className="pt-4 border-t border-slate-200 space-y-3">
-        <div className="flex items-center gap-3 px-1">
-          {!imgError ? (
-            <img
-              src="/src/assets/images/avatar_student_profile_1795272055313.jpg"
-              alt="Student profile portrait"
-              referrerPolicy="no-referrer"
-              onError={() => setImgError(true)}
-              className="h-9 w-9 rounded-full object-cover border border-violet-200 shrink-0"
-            />
-          ) : (
-            <div className="h-9 w-9 rounded-full bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-semibold shrink-0">
-              ST
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-slate-900 truncate">
-              Alex Rivera
-            </div>
-            <div className="text-xs text-slate-500 truncate">
-              Fall Semester · Junior
+        <button
+          type="button"
+          onClick={() => {
+            onEditProfile();
+            onCloseMobile();
+          }}
+          className="w-full flex items-center justify-between gap-2 px-1.5 py-1.5 rounded-lg hover:bg-violet-50/70 transition-colors text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600"
+          title="Edit your name, Gmail, semester, and level"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {profile?.photoURL && !imgError ? (
+              <img
+                src={profile.photoURL}
+                alt={displayName}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+                className="h-9 w-9 rounded-full object-cover border border-violet-200 shrink-0"
+              />
+            ) : (
+              <div className="h-9 w-9 rounded-full bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-semibold shrink-0 border border-violet-200">
+                {initials}
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-slate-900 truncate">
+                {displayName}
+              </div>
+              <div className="text-xs text-slate-600 truncate">
+                {semesterLevel || "Set semester · level"}
+              </div>
+              {displayGmail && (
+                <div className="text-[11px] text-slate-400 truncate">
+                  {displayGmail}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+          <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-violet-700 shrink-0" />
+        </button>
 
-        <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center justify-between gap-1 px-1">
           <button
             type="button"
             onClick={onToggleSound}
@@ -176,17 +217,27 @@ export function Sidebar({
             ) : (
               <VolumeX className="h-3.5 w-3.5 text-slate-400" />
             )}
-            <span>{soundEnabled ? "Chime On" : "Chime Off"}</span>
+            <span>{soundEnabled ? "Chime" : "Muted"}</span>
           </button>
 
           <button
             type="button"
             onClick={onResetDemoData}
             title="Restore sample semester data"
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 py-1.5 px-2 rounded-md hover:bg-slate-100 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 py-1.5 px-2 rounded-md hover:bg-slate-100 transition-colors whitespace-nowrap"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onSignOut}
+            title="Sign out of Termflow"
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-700 py-1.5 px-2 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign out</span>
           </button>
         </div>
       </div>

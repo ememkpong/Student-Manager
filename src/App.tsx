@@ -1,40 +1,20 @@
 import { useState } from "react";
+import { AuthGate } from "./components/AuthGate";
 import { ClassesView } from "./components/ClassesView";
 import { MoneyView } from "./components/MoneyView";
 import { OverviewView } from "./components/OverviewView";
+import { ProfileModal } from "./components/ProfileModal";
 import { QuickAddModal } from "./components/QuickAddModal";
 import { ReminderPopover } from "./components/ReminderPopover";
 import { ScheduleView } from "./components/ScheduleView";
 import { Sidebar } from "./components/Sidebar";
 import { TasksView } from "./components/TasksView";
 import { TopBar } from "./components/TopBar";
-import {
-  createInitialActivities,
-  createInitialBills,
-  createInitialClasses,
-  createInitialSchedule,
-  createInitialTasks,
-  createInitialTransactions,
-  DEFAULT_ACTIVITIES_PROMPT,
-  DEFAULT_BUDGET_LIMITS,
-  DEFAULT_PREFERENCES,
-} from "./data/defaultData";
-import { usePersistentState } from "./hooks/usePersistentState";
 import { useReminders } from "./hooks/useReminders";
-import type {
-  ActivityRequest,
-  AppTab,
-  BudgetLimits,
-  RecurringBill,
-  ScheduleBlock,
-  SchedulePreferences,
-  StudentClass,
-  TodoTask,
-  Transaction,
-} from "./types";
+import { useStudentWorkspace } from "./hooks/useStudentWorkspace";
+import type { AppTab, TodoTask } from "./types";
 import {
   formatISODate,
-  getCurrentMonthPrefix,
   getWeekdayFromDate,
   timeToMinutes,
 } from "./utils/dateUtils";
@@ -44,53 +24,27 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-  // Persistent Student State
-  const [classes, setClasses] = usePersistentState<StudentClass[]>(
-    "termflow_v1_classes",
-    () => createInitialClasses()
-  );
-  const [tasks, setTasks] = usePersistentState<TodoTask[]>(
-    "termflow_v1_tasks",
-    () => createInitialTasks()
-  );
-  const [activitiesPrompt, setActivitiesPrompt] = usePersistentState<string>(
-    "termflow_v1_activities_prompt",
-    DEFAULT_ACTIVITIES_PROMPT
-  );
-  const [activitiesList, setActivitiesList] = usePersistentState<
-    ActivityRequest[]
-  >("termflow_v1_activities_list", () => createInitialActivities());
-  const [preferences, setPreferences] =
-    usePersistentState<SchedulePreferences>(
-      "termflow_v1_preferences",
-      DEFAULT_PREFERENCES
-    );
-  const [scheduleBlocks, setScheduleBlocks] = usePersistentState<
-    ScheduleBlock[]
-  >("termflow_v1_schedule", () => createInitialSchedule(createInitialClasses()));
-  const [scheduleSummary, setScheduleSummary] = usePersistentState<string>(
-    "termflow_v1_schedule_summary",
-    ""
-  );
-  const [transactions, setTransactions] = usePersistentState<Transaction[]>(
-    "termflow_ngn_v2_transactions",
-    () => createInitialTransactions()
-  );
-  const [budgetLimits, setBudgetLimits] = usePersistentState<BudgetLimits>(
-    "termflow_ngn_v1_budget",
-    DEFAULT_BUDGET_LIMITS
-  );
-  const [bills, setBills] = usePersistentState<RecurringBill[]>(
-    "termflow_ngn_v1_bills",
-    () => createInitialBills()
-  );
-  const [soundEnabled, setSoundEnabled] = usePersistentState<boolean>(
-    "termflow_v1_sound",
-    true
-  );
-  const [browserAlertsEnabled, setBrowserAlertsEnabled] =
-    usePersistentState<boolean>("termflow_v1_browser_alerts", false);
+  const workspace = useStudentWorkspace();
+  const {
+    user,
+    authReady,
+    workspaceReady,
+    profile,
+    classes,
+    tasks,
+    activitiesPrompt,
+    activitiesList,
+    preferences,
+    scheduleBlocks,
+    scheduleSummary,
+    transactions,
+    budgetLimits,
+    bills,
+    soundEnabled,
+    browserAlertsEnabled,
+  } = workspace;
 
   const { now, nextClass, activeAlerts, dismissAlert, snoozeAlert } =
     useReminders({
@@ -102,40 +56,49 @@ export default function App() {
       browserAlertsEnabled,
     });
 
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-[#faf9fd] flex items-center justify-center p-6">
+        <div className="text-center space-y-2">
+          <div className="font-display text-xl font-bold text-violet-950">
+            Termflow
+          </div>
+          <div className="text-xs text-slate-500">Checking your session...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthGate />;
+  }
+
+  if (!workspaceReady) {
+    return (
+      <div className="min-h-screen bg-[#faf9fd] flex items-center justify-center p-6">
+        <div className="text-center space-y-2">
+          <div className="font-display text-xl font-bold text-violet-950">
+            Termflow
+          </div>
+          <div className="text-xs text-slate-500">
+            Loading your saved student workspace...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const needsOnboarding = Boolean(profile && !profile.profileCompleted);
+  const showProfileModal = needsOnboarding || profileModalOpen;
+
   const todayLabel = now.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
 
-  // Handlers: Tasks
-  const handleAddTask = (
-    task: Omit<TodoTask, "id" | "createdAt" | "completed">
-  ) => {
-    const newTask: TodoTask = {
-      ...task,
-      id: `tsk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      completed: false,
-      createdAt: formatISODate(new Date()),
-    };
-    setTasks((prev) => [newTask, ...prev]);
-  };
-
-  const handleAddMultipleTasks = (
-    items: Omit<TodoTask, "id" | "createdAt" | "completed">[]
-  ) => {
-    const todayISO = formatISODate(new Date());
-    const newTasks: TodoTask[] = items.map((item, idx) => ({
-      ...item,
-      id: `tsk-${Date.now()}-${idx}`,
-      completed: false,
-      createdAt: todayISO,
-    }));
-    setTasks((prev) => [...newTasks, ...prev]);
-  };
-
   const handleQuickAddTask = (title: string) => {
-    handleAddTask({
+    void workspace.addTask({
       title,
       category: "Personal",
       priority: "Medium",
@@ -144,16 +107,6 @@ export default function App() {
       estimatedMinutes: 30,
       remindBeforeMinutes: 30,
     });
-  };
-
-  const handleToggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
-  };
-
-  const handleDeleteTask = (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
   const handleScheduleTask = (task: TodoTask) => {
@@ -184,8 +137,7 @@ export default function App() {
         mins % 60
       ).padStart(2, "0")}`;
 
-    const newBlock: ScheduleBlock = {
-      id: `blk-tsk-${Date.now()}`,
+    void workspace.addScheduleBlock({
       title: task.title,
       day: todayWd,
       startTime: toHHMM(slotStart),
@@ -195,178 +147,36 @@ export default function App() {
       sourceType: "task",
       sourceId: task.id,
       completed: false,
-    };
+    });
 
-    setScheduleBlocks((prev) => [...prev, newBlock]);
     setActiveTab("schedule");
   };
 
-  // Handlers: Classes
-  const handleAddClass = (cls: Omit<StudentClass, "id">) => {
-    const newCls: StudentClass = {
-      ...cls,
-      id: `cls-${Date.now()}`,
-    };
-    setClasses((prev) => [...prev, newCls]);
-
-    // Also reflect in current schedule blocks
-    const newBlocks: ScheduleBlock[] = newCls.days.map((day) => ({
-      id: `blk-${newCls.id}-${day}`,
-      title: `${newCls.code}: ${newCls.title}`,
-      day,
-      startTime: newCls.startTime,
-      endTime: newCls.endTime,
-      category: "class",
-      location: newCls.location,
-      notes: newCls.instructor,
-      sourceType: "class",
-      sourceId: newCls.id,
-      completed: false,
-    }));
-    setScheduleBlocks((prev) => [...prev, ...newBlocks]);
-  };
-
-  const handleUpdateClass = (updated: StudentClass) => {
-    setClasses((prev) =>
-      prev.map((c) => (c.id === updated.id ? updated : c))
-    );
-    setScheduleBlocks((prev) => {
-      const withoutOld = prev.filter(
-        (b) => !(b.sourceType === "class" && b.sourceId === updated.id)
-      );
-      const refreshed: ScheduleBlock[] = updated.days.map((day) => ({
-        id: `blk-${updated.id}-${day}`,
-        title: `${updated.code}: ${updated.title}`,
-        day,
-        startTime: updated.startTime,
-        endTime: updated.endTime,
-        category: "class",
-        location: updated.location,
-        notes: updated.instructor,
-        sourceType: "class",
-        sourceId: updated.id,
-        completed: false,
-      }));
-      return [...withoutOld, ...refreshed];
-    });
-  };
-
-  const handleDeleteClass = (id: string) => {
-    setClasses((prev) => prev.filter((c) => c.id !== id));
-    setScheduleBlocks((prev) =>
-      prev.filter((b) => !(b.sourceType === "class" && b.sourceId === id))
-    );
-  };
-
-  const handleToggleClassReminder = (id: string) => {
-    setClasses((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, remindersEnabled: !c.remindersEnabled } : c
-      )
-    );
-  };
-
-  // Handlers: Activities & Schedule
-  const handleAddActivity = (act: Omit<ActivityRequest, "id">) => {
-    setActivitiesList((prev) => [
-      ...prev,
-      { ...act, id: `act-${Date.now()}` },
-    ]);
-  };
-
-  const handleDeleteActivity = (id: string) => {
-    setActivitiesList((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleAddManualBlock = (block: Omit<ScheduleBlock, "id">) => {
-    setScheduleBlocks((prev) => [
-      ...prev,
-      { ...block, id: `blk-${Date.now()}` },
-    ]);
-  };
-
-  const handleToggleBlockComplete = (id: string) => {
-    setScheduleBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, completed: !b.completed } : b))
-    );
-  };
-
-  const handleDeleteBlock = (id: string) => {
-    setScheduleBlocks((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  // Handlers: Money & Bills
-  const handleAddTransaction = (tx: Omit<Transaction, "id">) => {
-    setTransactions((prev) => [{ ...tx, id: `tx-${Date.now()}` }, ...prev]);
-  };
-
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const handleAddBill = (bill: Omit<RecurringBill, "id">) => {
-    setBills((prev) => [...prev, { ...bill, id: `bill-${Date.now()}` }]);
-  };
-
-  const handlePayBill = (bill: RecurringBill) => {
-    const monthPrefix = getCurrentMonthPrefix(new Date());
-    setBills((prev) =>
-      prev.map((b) =>
-        b.id === bill.id ? { ...b, lastPaidMonth: monthPrefix } : b
-      )
-    );
-    handleAddTransaction({
-      title: bill.title,
-      amount: bill.amount,
-      type: "expense",
-      category: bill.category,
-      date: formatISODate(new Date()),
-      notes: "Paid recurring bill",
-    });
-  };
-
-  const handleDeleteBill = (id: string) => {
-    setBills((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  // Browser notifications permission
   const handleRequestBrowserAlerts = async () => {
     if (typeof Notification === "undefined") return;
     if (Notification.permission === "granted") {
-      setBrowserAlertsEnabled((v) => !v);
+      void workspace.setBrowserAlerts(!browserAlertsEnabled);
       return;
     }
     const perm = await Notification.requestPermission();
     if (perm === "granted") {
-      setBrowserAlertsEnabled(true);
+      void workspace.setBrowserAlerts(true);
     }
   };
 
-  // Reset demo data
-  const handleResetDemoData = () => {
-    const freshClasses = createInitialClasses();
-    setClasses(freshClasses);
-    setTasks(createInitialTasks());
-    setActivitiesPrompt(DEFAULT_ACTIVITIES_PROMPT);
-    setActivitiesList(createInitialActivities());
-    setPreferences(DEFAULT_PREFERENCES);
-    setScheduleBlocks(createInitialSchedule(freshClasses));
-    setScheduleSummary("");
-    setTransactions(createInitialTransactions());
-    setBudgetLimits(DEFAULT_BUDGET_LIMITS);
-    setBills(createInitialBills());
-  };
-
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-[#faf9fd] text-slate-900">
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         nextClass={nextClass}
         openTasksCount={tasks.filter((t) => !t.completed).length}
         soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled((v) => !v)}
-        onResetDemoData={handleResetDemoData}
+        onToggleSound={() => void workspace.toggleSound()}
+        onResetDemoData={() => void workspace.resetDemoData()}
+        profile={profile}
+        onEditProfile={() => setProfileModalOpen(true)}
+        onSignOut={() => void workspace.handleSignOut()}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
@@ -385,6 +195,8 @@ export default function App() {
         <main className="flex-1 p-4 sm:p-8 max-w-[1360px] w-full mx-auto">
           {activeTab === "overview" && (
             <OverviewView
+              profile={profile}
+              onEditProfile={() => setProfileModalOpen(true)}
               nextClass={nextClass}
               classes={classes}
               scheduleBlocks={scheduleBlocks}
@@ -393,8 +205,10 @@ export default function App() {
               budgetLimits={budgetLimits}
               activeAlerts={activeAlerts}
               onNavigate={setActiveTab}
-              onToggleBlockComplete={handleToggleBlockComplete}
-              onToggleTaskComplete={handleToggleTask}
+              onToggleBlockComplete={(id) =>
+                void workspace.toggleBlockComplete(id)
+              }
+              onToggleTaskComplete={(id) => void workspace.toggleTask(id)}
               onQuickAddTask={handleQuickAddTask}
             />
           )}
@@ -402,23 +216,26 @@ export default function App() {
           {activeTab === "schedule" && (
             <ScheduleView
               activitiesPrompt={activitiesPrompt}
-              onChangeActivitiesPrompt={setActivitiesPrompt}
+              onChangeActivitiesPrompt={workspace.setActivitiesPrompt}
               activitiesList={activitiesList}
-              onAddActivity={handleAddActivity}
-              onDeleteActivity={handleDeleteActivity}
+              onAddActivity={(act) => void workspace.addActivity(act)}
+              onDeleteActivity={(id) => void workspace.deleteActivity(id)}
               preferences={preferences}
-              onChangePreferences={setPreferences}
+              onChangePreferences={workspace.setPreferences}
               classes={classes}
               tasks={tasks}
               scheduleBlocks={scheduleBlocks}
               scheduleSummary={scheduleSummary}
-              onApplyGeneratedSchedule={(blocks, summary) => {
-                setScheduleBlocks(blocks);
-                setScheduleSummary(summary);
-              }}
-              onAddManualBlock={handleAddManualBlock}
-              onToggleBlockComplete={handleToggleBlockComplete}
-              onDeleteBlock={handleDeleteBlock}
+              onApplyGeneratedSchedule={(blocks, summary) =>
+                void workspace.applyGeneratedSchedule(blocks, summary)
+              }
+              onAddManualBlock={(block) =>
+                void workspace.addScheduleBlock(block)
+              }
+              onToggleBlockComplete={(id) =>
+                void workspace.toggleBlockComplete(id)
+              }
+              onDeleteBlock={(id) => void workspace.deleteBlock(id)}
             />
           )}
 
@@ -426,10 +243,12 @@ export default function App() {
             <ClassesView
               classes={classes}
               nextClass={nextClass}
-              onAddClass={handleAddClass}
-              onUpdateClass={handleUpdateClass}
-              onDeleteClass={handleDeleteClass}
-              onToggleClassReminder={handleToggleClassReminder}
+              onAddClass={(cls) => void workspace.addClass(cls)}
+              onUpdateClass={(cls) => void workspace.updateClass(cls)}
+              onDeleteClass={(id) => void workspace.deleteClass(id)}
+              onToggleClassReminder={(id) =>
+                void workspace.toggleClassReminder(id)
+              }
             />
           )}
 
@@ -437,10 +256,12 @@ export default function App() {
             <TasksView
               tasks={tasks}
               classes={classes}
-              onAddTask={handleAddTask}
-              onAddMultipleTasks={handleAddMultipleTasks}
-              onToggleTask={handleToggleTask}
-              onDeleteTask={handleDeleteTask}
+              onAddTask={(t) => void workspace.addTask(t)}
+              onAddMultipleTasks={(items) =>
+                void workspace.addMultipleTasks(items)
+              }
+              onToggleTask={(id) => void workspace.toggleTask(id)}
+              onDeleteTask={(id) => void workspace.deleteTask(id)}
               onScheduleTask={handleScheduleTask}
             />
           )}
@@ -450,12 +271,16 @@ export default function App() {
               transactions={transactions}
               budgetLimits={budgetLimits}
               bills={bills}
-              onAddTransaction={handleAddTransaction}
-              onDeleteTransaction={handleDeleteTransaction}
-              onUpdateBudgetLimits={setBudgetLimits}
-              onAddBill={handleAddBill}
-              onPayBill={handlePayBill}
-              onDeleteBill={handleDeleteBill}
+              onAddTransaction={(tx) => void workspace.addTransaction(tx)}
+              onDeleteTransaction={(id) =>
+                void workspace.deleteTransaction(id)
+              }
+              onUpdateBudgetLimits={(limits) =>
+                void workspace.setBudgetLimits(limits)
+              }
+              onAddBill={(bill) => void workspace.addBill(bill)}
+              onPayBill={(bill) => void workspace.payBill(bill)}
+              onDeleteBill={(id) => void workspace.deleteBill(id)}
             />
           )}
         </main>
@@ -476,10 +301,20 @@ export default function App() {
         open={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
         classes={classes}
-        onAddTask={handleAddTask}
-        onAddTransaction={handleAddTransaction}
-        onAddClass={handleAddClass}
-        onAddActivity={handleAddActivity}
+        onAddTask={(t) => void workspace.addTask(t)}
+        onAddTransaction={(tx) => void workspace.addTransaction(tx)}
+        onAddClass={(cls) => void workspace.addClass(cls)}
+        onAddActivity={(act) => void workspace.addActivity(act)}
+      />
+
+      <ProfileModal
+        open={showProfileModal}
+        isOnboarding={needsOnboarding}
+        profile={profile}
+        fallbackName={user.displayName || ""}
+        fallbackEmail={user.email || ""}
+        onSave={workspace.saveProfile}
+        onClose={() => setProfileModalOpen(false)}
       />
     </div>
   );

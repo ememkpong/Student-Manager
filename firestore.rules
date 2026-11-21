@@ -1,0 +1,496 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function userDocExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isValidEmail(val) {
+      return val is string && val.size() >= 3 && val.size() <= 160 && val.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$');
+    }
+
+    function isValidHHMM(val) {
+      return val is string && val.size() == 5 && val.matches('^([01]\\d|2[0-3]):[0-5]\\d$');
+    }
+
+    function isValidISODate(val) {
+      return val is string && val.size() == 10 && val.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidMonthPrefix(val) {
+      return val is string && val.size() == 7 && val.matches('^\\d{4}-\\d{2}$');
+    }
+
+    function isValidBudgetCategory(cat) {
+      return cat in [
+        'Dining & Groceries',
+        'Housing & Utilities',
+        'Textbooks & Study',
+        'Transit',
+        'Personal & Leisure',
+        'Other'
+      ];
+    }
+
+    function isValidBlockCategory(cat) {
+      return cat in ['class', 'study', 'activity', 'errand', 'wellness', 'work', 'break'];
+    }
+
+    // --- Entity Validation Blueprints ---
+    function isValidStudentProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'name', 'gmail', 'semester', 'level', 'photoURL', 'profileCompleted', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'name', 'gmail', 'semester', 'level', 'photoURL', 'profileCompleted', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && isValidEmail(data.gmail)
+        && data.semester is string && data.semester.size() <= 80
+        && data.level is string && data.level.size() <= 60
+        && data.photoURL is string && data.photoURL.size() <= 500
+        && data.profileCompleted is bool
+        && (!data.profileCompleted || (data.semester.size() >= 1 && data.level.size() >= 1))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPreferencesMap(prefs) {
+      return prefs is map
+        && prefs.keys().hasAll(['wakeTime', 'sleepTime', 'breakMinutes', 'scope', 'focusNote', 'includeClasses', 'includeTasks'])
+        && prefs.keys().hasOnly(['wakeTime', 'sleepTime', 'breakMinutes', 'scope', 'focusNote', 'includeClasses', 'includeTasks'])
+        && isValidHHMM(prefs.wakeTime)
+        && isValidHHMM(prefs.sleepTime)
+        && prefs.breakMinutes is number && prefs.breakMinutes >= 0 && prefs.breakMinutes <= 120
+        && prefs.scope in ['today', 'week']
+        && prefs.focusNote is string && prefs.focusNote.size() <= 500
+        && prefs.includeClasses is bool
+        && prefs.includeTasks is bool;
+    }
+
+    function isValidCategoryCapsMap(cats) {
+      return cats is map
+        && cats.keys().hasAll([
+          'Dining & Groceries',
+          'Housing & Utilities',
+          'Textbooks & Study',
+          'Transit',
+          'Personal & Leisure',
+          'Other'
+        ])
+        && cats.keys().hasOnly([
+          'Dining & Groceries',
+          'Housing & Utilities',
+          'Textbooks & Study',
+          'Transit',
+          'Personal & Leisure',
+          'Other'
+        ])
+        && cats['Dining & Groceries'] is number && cats['Dining & Groceries'] >= 0 && cats['Dining & Groceries'] <= 100000000
+        && cats['Housing & Utilities'] is number && cats['Housing & Utilities'] >= 0 && cats['Housing & Utilities'] <= 100000000
+        && cats['Textbooks & Study'] is number && cats['Textbooks & Study'] >= 0 && cats['Textbooks & Study'] <= 100000000
+        && cats['Transit'] is number && cats['Transit'] >= 0 && cats['Transit'] <= 100000000
+        && cats['Personal & Leisure'] is number && cats['Personal & Leisure'] >= 0 && cats['Personal & Leisure'] <= 100000000
+        && cats['Other'] is number && cats['Other'] >= 0 && cats['Other'] <= 100000000;
+    }
+
+    function isValidBudgetLimitsMap(limits) {
+      return limits is map
+        && limits.keys().hasAll(['monthlyCap', 'categories'])
+        && limits.keys().hasOnly(['monthlyCap', 'categories'])
+        && limits.monthlyCap is number && limits.monthlyCap >= 0 && limits.monthlyCap <= 100000000
+        && isValidCategoryCapsMap(limits.categories);
+    }
+
+    function isValidWorkspaceSettings(data, userId) {
+      return data.keys().hasAll(['ownerId', 'activitiesPrompt', 'scheduleSummary', 'soundEnabled', 'browserAlertsEnabled', 'seededDemo', 'preferences', 'budgetLimits', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'activitiesPrompt', 'scheduleSummary', 'soundEnabled', 'browserAlertsEnabled', 'seededDemo', 'preferences', 'budgetLimits', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerId)
+        && data.ownerId == userId
+        && data.ownerId == request.auth.uid
+        && data.activitiesPrompt is string && data.activitiesPrompt.size() <= 3000
+        && data.scheduleSummary is string && data.scheduleSummary.size() <= 1500
+        && data.soundEnabled is bool
+        && data.browserAlertsEnabled is bool
+        && data.seededDemo is bool
+        && isValidPreferencesMap(data.preferences)
+        && isValidBudgetLimitsMap(data.budgetLimits)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStudentClass(data, userId, classId) {
+      return data.keys().hasAll(['id', 'ownerId', 'code', 'title', 'days', 'startTime', 'endTime', 'location', 'instructor', 'remindMinutesBefore', 'remindersEnabled', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'code', 'title', 'days', 'startTime', 'endTime', 'location', 'instructor', 'remindMinutesBefore', 'remindersEnabled', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == classId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.code is string && data.code.size() >= 1 && data.code.size() <= 32
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.days is list && data.days.size() >= 1 && data.days.size() <= 7
+        && data.days[0] is string
+        && data.days.hasOnly(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+        && isValidHHMM(data.startTime)
+        && isValidHHMM(data.endTime)
+        && data.location is string && data.location.size() <= 140
+        && data.instructor is string && data.instructor.size() <= 120
+        && data.remindMinutesBefore is number && data.remindMinutesBefore >= 0 && data.remindMinutesBefore <= 240
+        && data.remindersEnabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTodoTask(data, userId, taskId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'category', 'priority', 'dueDate', 'dueTime', 'estimatedMinutes', 'completed', 'remindBeforeMinutes', 'createdAt', 'recordedAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'category', 'priority', 'dueDate', 'dueTime', 'estimatedMinutes', 'courseCode', 'notes', 'completed', 'remindBeforeMinutes', 'createdAt', 'recordedAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == taskId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.category in ['Academic', 'Errand', 'Finance', 'Personal']
+        && data.priority in ['High', 'Medium', 'Low']
+        && isValidISODate(data.dueDate)
+        && isValidHHMM(data.dueTime)
+        && data.estimatedMinutes is number && data.estimatedMinutes >= 5 && data.estimatedMinutes <= 1440
+        && (!('courseCode' in data) || (data.courseCode is string && data.courseCode.size() <= 32))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 600))
+        && data.completed is bool
+        && data.remindBeforeMinutes is number && data.remindBeforeMinutes >= 0 && data.remindBeforeMinutes <= 1440
+        && isValidISODate(data.createdAt)
+        && data.recordedAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidActivityRequest(data, userId, activityId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'durationMinutes', 'frequency', 'preferredWindow', 'category', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'durationMinutes', 'frequency', 'preferredWindow', 'category', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == activityId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 160
+        && data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 720
+        && data.frequency is string && data.frequency.size() >= 1 && data.frequency.size() <= 80
+        && data.preferredWindow in ['Anytime', 'Morning', 'Afternoon', 'Evening']
+        && isValidBlockCategory(data.category)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidScheduleBlock(data, userId, blockId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'day', 'startTime', 'endTime', 'category', 'sourceType', 'completed', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'day', 'startTime', 'endTime', 'category', 'location', 'notes', 'sourceType', 'sourceId', 'completed', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == blockId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 180
+        && data.day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        && isValidHHMM(data.startTime)
+        && isValidHHMM(data.endTime)
+        && isValidBlockCategory(data.category)
+        && (!('location' in data) || (data.location is string && data.location.size() <= 140))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 400))
+        && data.sourceType in ['class', 'task', 'activity']
+        && (!('sourceId' in data) || (data.sourceId is string && data.sourceId.size() <= 128))
+        && data.completed is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTransaction(data, userId, transactionId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'amount', 'type', 'category', 'date', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'amount', 'type', 'category', 'date', 'notes', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == transactionId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 160
+        && data.amount is number && data.amount >= 0 && data.amount <= 100000000
+        && data.type in ['expense', 'income']
+        && (data.category == 'Income' || isValidBudgetCategory(data.category))
+        && isValidISODate(data.date)
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 400))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRecurringBill(data, userId, billId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'amount', 'dueDay', 'category', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'amount', 'dueDay', 'category', 'lastPaidMonth', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == billId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.amount is number && data.amount >= 0 && data.amount <= 100000000
+        && data.dueDay is number && data.dueDay >= 1 && data.dueDay <= 31
+        && isValidBudgetCategory(data.category)
+        && (!('lastPaidMonth' in data) || isValidMonthPrefix(data.lastPaidMonth))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /users/{userId} {
+      allow get: if isVerified() && isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isVerified()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidStudentProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidStudentProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'gmail', 'semester', 'level', 'photoURL', 'profileCompleted', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['photoURL', 'updatedAt'])
+        );
+
+      allow delete: if false;
+
+      match /settings/{settingId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && settingId == 'workspace';
+        allow list: if false;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && settingId == 'workspace'
+          && isValidWorkspaceSettings(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && settingId == 'workspace'
+          && isValidWorkspaceSettings(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['activitiesPrompt', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['scheduleSummary', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['soundEnabled', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['browserAlertsEnabled', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['preferences', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['budgetLimits', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['activitiesPrompt', 'scheduleSummary', 'preferences', 'budgetLimits', 'seededDemo', 'updatedAt'])
+          );
+
+        allow delete: if false;
+      }
+
+      match /classes/{classId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(classId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(classId)
+          && isValidStudentClass(incoming(), userId, classId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(classId)
+          && isValidStudentClass(incoming(), userId, classId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['remindersEnabled', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['code', 'title', 'days', 'startTime', 'endTime', 'location', 'instructor', 'remindMinutesBefore', 'remindersEnabled', 'updatedAt'])
+          );
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(classId);
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(taskId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(taskId)
+          && isValidTodoTask(incoming(), userId, taskId)
+          && incoming().recordedAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(taskId)
+          && isValidTodoTask(incoming(), userId, taskId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().recordedAt == existing().recordedAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'priority', 'dueDate', 'dueTime', 'estimatedMinutes', 'courseCode', 'notes', 'completed', 'remindBeforeMinutes', 'updatedAt'])
+          );
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(taskId);
+      }
+
+      match /activities/{activityId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(activityId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(activityId)
+          && isValidActivityRequest(incoming(), userId, activityId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(activityId)
+          && isValidActivityRequest(incoming(), userId, activityId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'durationMinutes', 'frequency', 'preferredWindow', 'category', 'updatedAt']);
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(activityId);
+      }
+
+      match /scheduleBlocks/{blockId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(blockId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(blockId)
+          && isValidScheduleBlock(incoming(), userId, blockId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(blockId)
+          && isValidScheduleBlock(incoming(), userId, blockId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'day', 'startTime', 'endTime', 'category', 'location', 'notes', 'sourceType', 'sourceId', 'completed', 'updatedAt'])
+          );
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(blockId);
+      }
+
+      match /transactions/{transactionId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(transactionId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(transactionId)
+          && isValidTransaction(incoming(), userId, transactionId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(transactionId)
+          && isValidTransaction(incoming(), userId, transactionId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'amount', 'type', 'category', 'date', 'notes', 'updatedAt']);
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(transactionId);
+      }
+
+      match /bills/{billId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(billId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(billId)
+          && isValidRecurringBill(incoming(), userId, billId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(billId)
+          && isValidRecurringBill(incoming(), userId, billId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['lastPaidMonth', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'amount', 'dueDay', 'category', 'lastPaidMonth', 'updatedAt'])
+          );
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(billId);
+      }
+    }
+  }
+}

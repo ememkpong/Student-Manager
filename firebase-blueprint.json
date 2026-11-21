@@ -1,0 +1,629 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "description": "Authenticated student account and academic profile metadata (name, Gmail, semester, and level).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID owning this profile.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Student full display name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "gmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Student Gmail or academic email address.",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "semester": {
+          "type": "string",
+          "description": "Current academic semester (e.g., Harmattan 2026, Fall Semester).",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "level": {
+          "type": "string",
+          "description": "Current academic level or standing (e.g., 300 Level, Junior).",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Optional profile avatar URL.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "profileCompleted": {
+          "type": "boolean",
+          "description": "Whether the student has saved their academic profile details."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when profile was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "gmail",
+        "semester",
+        "level",
+        "photoURL",
+        "profileCompleted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorkspaceSettings": {
+      "title": "WorkspaceSettings",
+      "description": "Student schedule preferences, monthly Naira budget limits, and notification toggles.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "activitiesPrompt": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "scheduleSummary": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "soundEnabled": {
+          "type": "boolean"
+        },
+        "browserAlertsEnabled": {
+          "type": "boolean"
+        },
+        "seededDemo": {
+          "type": "boolean"
+        },
+        "preferences": {
+          "type": "object",
+          "description": "AI schedule generator preferences (wakeTime, sleepTime, breakMinutes, scope, focusNote, includeClasses, includeTasks)."
+        },
+        "budgetLimits": {
+          "type": "object",
+          "description": "Monthly Naira spending cap and category caps."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "activitiesPrompt",
+        "scheduleSummary",
+        "soundEnabled",
+        "browserAlertsEnabled",
+        "seededDemo",
+        "preferences",
+        "budgetLimits",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StudentClass": {
+      "title": "StudentClass",
+      "description": "Enrolled course timetable entry with reminder settings.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "days": {
+          "type": "array",
+          "description": "Bounded list of meeting weekdays (1 to 7 entries)."
+        },
+        "startTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "endTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "location": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 140
+        },
+        "instructor": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "remindMinutesBefore": {
+          "type": "number"
+        },
+        "remindersEnabled": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "code",
+        "title",
+        "days",
+        "startTime",
+        "endTime",
+        "location",
+        "instructor",
+        "remindMinutesBefore",
+        "remindersEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TodoTask": {
+      "title": "TodoTask",
+      "description": "Student to-do task with due date, priority, and reminder lead time.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Academic", "Errand", "Finance", "Personal"]
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["High", "Medium", "Low"]
+        },
+        "dueDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "dueTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "estimatedMinutes": {
+          "type": "number"
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 32
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 600
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "remindBeforeMinutes": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "recordedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "category",
+        "priority",
+        "dueDate",
+        "dueTime",
+        "estimatedMinutes",
+        "completed",
+        "remindBeforeMinutes",
+        "createdAt",
+        "recordedAt",
+        "updatedAt"
+      ]
+    },
+    "ActivityRequest": {
+      "title": "ActivityRequest",
+      "description": "Recurring personal activity input for AI schedule building.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "durationMinutes": {
+          "type": "number"
+        },
+        "frequency": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "preferredWindow": {
+          "type": "string",
+          "enum": ["Anytime", "Morning", "Afternoon", "Evening"]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["class", "study", "activity", "errand", "wellness", "work", "break"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "durationMinutes",
+        "frequency",
+        "preferredWindow",
+        "category",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ScheduleBlock": {
+      "title": "ScheduleBlock",
+      "description": "Scheduled time block on the student's weekly or daily timetable.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "day": {
+          "type": "string",
+          "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        },
+        "startTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "endTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["class", "study", "activity", "errand", "wellness", "work", "break"]
+        },
+        "location": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 140
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 400
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["class", "task", "activity"]
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "day",
+        "startTime",
+        "endTime",
+        "category",
+        "sourceType",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Student income or Naira expense entry.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "amount": {
+          "type": "number"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["expense", "income"]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Dining & Groceries",
+            "Housing & Utilities",
+            "Textbooks & Study",
+            "Transit",
+            "Personal & Leisure",
+            "Other",
+            "Income"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "amount",
+        "type",
+        "category",
+        "date",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RecurringBill": {
+      "title": "RecurringBill",
+      "description": "Monthly recurring student bill tracked in Naira.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "amount": {
+          "type": "number"
+        },
+        "dueDay": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Dining & Groceries",
+            "Housing & Utilities",
+            "Textbooks & Study",
+            "Transit",
+            "Personal & Leisure",
+            "Other"
+          ]
+        },
+        "lastPaidMonth": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "amount",
+        "dueDay",
+        "category",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/StudentProfile" },
+      "description": "Private student profile containing name, Gmail, semester, and academic level."
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/WorkspaceSettings" },
+      "description": "Workspace configuration document ('workspace') for preferences, budget limits, and alert toggles."
+    },
+    "/users/{userId}/classes/{classId}": {
+      "schema": { "$ref": "#/entities/StudentClass" },
+      "description": "User-owned enrolled classes and reminder settings."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/TodoTask" },
+      "description": "User-owned assignments, errands, and tasks."
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityRequest" },
+      "description": "User-owned recurring activities for schedule generation."
+    },
+    "/users/{userId}/scheduleBlocks/{blockId}": {
+      "schema": { "$ref": "#/entities/ScheduleBlock" },
+      "description": "User-owned scheduled time blocks."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "User-owned income and Naira expense records."
+    },
+    "/users/{userId}/bills/{billId}": {
+      "schema": { "$ref": "#/entities/RecurringBill" },
+      "description": "User-owned recurring monthly bills."
+    }
+  }
+}

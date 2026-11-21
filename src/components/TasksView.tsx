@@ -184,10 +184,10 @@ export function TasksView({
   return (
     <div className="space-y-6">
       {/* Add Task & Brain Dump Panel */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+      <section className="bg-white border border-purple-200 rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-base font-semibold text-slate-900">
+            <h2 className="font-display text-base font-semibold text-purple-950">
               Everything You Have To Do
             </h2>
             <p className="text-xs text-slate-500">
@@ -199,18 +199,18 @@ export function TasksView({
             onClick={() => setShowBrainDump((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
               showBrainDump
-                ? "border-violet-600 bg-violet-50 text-violet-700"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                ? "border-purple-700 bg-purple-50 text-purple-800"
+                : "border-purple-200 bg-white text-purple-900 hover:bg-purple-50"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+            <Sparkles className="h-3.5 w-3.5 text-purple-700" />
             <span>Organize Brain Dump</span>
           </button>
         </div>
 
         {showBrainDump && (
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
-            <label className="block text-xs font-medium text-slate-700">
+          <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-lg space-y-3">
+            <label className="block text-xs font-medium text-purple-950">
               Paste everything on your mind (assignments, errands, bills,
               appointments)
             </label>
@@ -218,8 +218,8 @@ export function TasksView({
               rows={3}
               value={brainDumpText}
               onChange={(e) => setBrainDumpText(e.target.value)}
-              placeholder="e.g. Finish CS 301 lab by tomorrow 6pm takes 90 min, buy groceries and laundry detergent tonight, email Dr. Cole about Econ paper Friday..."
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600"
+              placeholder="e.g. Finish lab report by tomorrow 6pm takes 90 min, buy groceries and laundry detergent tonight, email lecturer Friday..."
+              className="w-full px-3 py-2 text-sm bg-white border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
             {parseError && (
               <div className="flex items-center gap-2 text-xs text-red-600">
@@ -231,7 +231,7 @@ export function TasksView({
               <button
                 type="button"
                 onClick={() => setShowBrainDump(false)}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900"
+                className="px-3 py-1.5 text-xs text-slate-600 hover:text-purple-900"
               >
                 Cancel
               </button>
@@ -239,7 +239,7 @@ export function TasksView({
                 type="button"
                 disabled={isParsing || !brainDumpText.trim()}
                 onClick={handleBrainDumpParse}
-                className="px-4 py-1.5 text-xs font-medium bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-60"
+                className="px-4 py-1.5 text-xs font-medium bg-purple-700 text-white rounded-lg hover:bg-purple-800 disabled:opacity-60"
               >
                 {isParsing ? "Organizing..." : "Convert Into Tasks"}
               </button>
@@ -341,7 +341,7 @@ export function TasksView({
             )}
             <button
               type="submit"
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 whitespace-nowrap"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 whitespace-nowrap"
             >
               <Plus className="h-4 w-4" />
               <span>Add</span>
@@ -351,9 +351,9 @@ export function TasksView({
       </section>
 
       {/* Filter Toolbar & Task List */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto">
+      <section className="bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-purple-100 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-1 p-1 bg-purple-50 border border-purple-100 rounded-lg overflow-x-auto">
             {(
               [
                 { id: "open", label: `Open (${counts.open})` },
@@ -369,8 +369,8 @@ export function TasksView({
                 onClick={() => setFilter(tab.id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap tabular-nums ${
                   filter === tab.id
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-purple-900 hover:bg-white"
                 }`}
               >
                 {tab.label}
@@ -416,14 +416,14 @@ export function TasksView({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-purple-100">
             {filteredTasks.map((task) => {
               const isOverdue = !task.completed && task.dueDate < todayISO;
               return (
                 <div
                   key={task.id}
                   className={`px-5 py-3.5 flex items-start justify-between gap-4 transition-colors ${
-                    task.completed ? "bg-slate-50/60" : "hover:bg-slate-50/50"
+                    task.completed ? "bg-purple-50/40" : "hover:bg-purple-50/25"
                   }`}
                 >
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
@@ -435,8 +435,8 @@ export function TasksView({
                       }`}
                       className={`mt-0.5 h-5 w-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
                         task.completed
-                          ? "bg-violet-600 border-violet-600 text-white"
-                          : "border-slate-300 bg-white hover:border-violet-600"
+                          ? "bg-purple-700 border-purple-700 text-white"
+                          : "border-purple-300 bg-white hover:border-purple-600"
                       }`}
                     >
                       {task.completed && <Check className="h-3.5 w-3.5" />}
@@ -455,7 +455,7 @@ export function TasksView({
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 tabular-nums">
                         {task.courseCode && (
                           <>
-                            <span className="font-mono font-medium text-violet-700">
+                            <span className="font-mono font-medium text-purple-700">
                               {task.courseCode}
                             </span>
                             <span aria-hidden="true">·</span>

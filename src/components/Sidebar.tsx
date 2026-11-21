@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   Pencil,
-  RotateCcw,
+  Trash2,
   Volume2,
   VolumeX,
   Wallet,
@@ -23,7 +23,7 @@ interface SidebarProps {
   openTasksCount: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
-  onResetDemoData: () => void;
+  onClearWorkspaceData: () => void;
   profile: StudentProfile | null;
   onEditProfile: () => void;
   onSignOut: () => void;
@@ -56,7 +56,7 @@ export function Sidebar({
   openTasksCount,
   soundEnabled,
   onToggleSound,
-  onResetDemoData,
+  onClearWorkspaceData,
   profile,
   onEditProfile,
   onSignOut,
@@ -64,6 +64,7 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const [imgError, setImgError] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const displayName = profile?.name?.trim() || "Student";
   const displayGmail = profile?.gmail?.trim() || "";
@@ -73,7 +74,7 @@ export function Sidebar({
   const initials = getInitials(displayName);
 
   const content = (
-    <div className="flex h-full flex-col justify-between bg-white border-r border-violet-200/70 px-4 py-5">
+    <div className="flex h-full flex-col justify-between bg-white border-r border-purple-200 px-4 py-5">
       <div className="space-y-6">
         {/* Brand Zone */}
         <div className="flex items-center justify-between px-2">
@@ -83,7 +84,7 @@ export function Sidebar({
               onSelectTab("overview");
               onCloseMobile();
             }}
-            className="font-display text-xl font-bold tracking-tight text-violet-950 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 rounded"
+            className="font-display text-xl font-bold tracking-tight text-purple-950 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 rounded"
           >
             Termflow
           </button>
@@ -91,7 +92,7 @@ export function Sidebar({
             type="button"
             onClick={onCloseMobile}
             aria-label="Close navigation menu"
-            className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg"
+            className="lg:hidden p-2 text-slate-500 hover:text-purple-900 rounded-lg"
           >
             <X className="h-4 w-4" />
           </button>
@@ -110,16 +111,16 @@ export function Sidebar({
                   onSelectTab(item.id);
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 ${
                   isActive
-                    ? "bg-violet-50 text-violet-800"
-                    : "text-slate-600 hover:bg-violet-50/50 hover:text-slate-900"
+                    ? "bg-purple-700 text-white"
+                    : "text-slate-700 hover:bg-purple-50 hover:text-purple-900"
                 }`}
               >
                 <span className="flex items-center gap-3">
                   <Icon
                     className={`h-4 w-4 shrink-0 ${
-                      isActive ? "text-violet-600" : "text-slate-400"
+                      isActive ? "text-purple-100" : "text-purple-500"
                     }`}
                   />
                   <span>{item.label}</span>
@@ -127,7 +128,7 @@ export function Sidebar({
                 {item.id === "tasks" && openTasksCount > 0 && (
                   <span
                     className={`font-mono text-xs tabular-nums ${
-                      isActive ? "text-violet-700 font-semibold" : "text-slate-400"
+                      isActive ? "text-purple-100 font-semibold" : "text-purple-700"
                     }`}
                   >
                     {openTasksCount}
@@ -139,8 +140,8 @@ export function Sidebar({
         </nav>
 
         {/* Next Class Live Countdown Box */}
-        <div className="border border-violet-200/80 rounded-xl p-3.5 bg-violet-50/45">
-          <div className="text-xs font-medium text-violet-700 mb-1">
+        <div className="border border-purple-200 rounded-xl p-3.5 bg-purple-50/75">
+          <div className="text-xs font-medium text-purple-800 mb-1">
             Next Class
           </div>
           {nextClass ? (
@@ -148,16 +149,16 @@ export function Sidebar({
               <div className="text-sm font-semibold text-slate-900 truncate">
                 {nextClass.cls.code} · {nextClass.cls.title}
               </div>
-              <div className="font-mono text-xs font-medium text-violet-700 tabular-nums">
+              <div className="font-mono text-xs font-medium text-purple-700 tabular-nums">
                 {nextClass.countdownText}
               </div>
-              <div className="text-xs text-slate-500 truncate">
+              <div className="text-xs text-slate-600 truncate">
                 {formatTime12h(nextClass.cls.startTime)} ·{" "}
                 {nextClass.cls.location || "Room TBA"}
               </div>
             </div>
           ) : (
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-slate-600">
               No classes scheduled yet. Add your timetable in Classes.
             </div>
           )}
@@ -165,14 +166,14 @@ export function Sidebar({
       </div>
 
       {/* Bottom Student Footer */}
-      <div className="pt-4 border-t border-slate-200 space-y-3">
+      <div className="pt-4 border-t border-purple-100 space-y-3">
         <button
           type="button"
           onClick={() => {
             onEditProfile();
             onCloseMobile();
           }}
-          className="w-full flex items-center justify-between gap-2 px-1.5 py-1.5 rounded-lg hover:bg-violet-50/70 transition-colors text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600"
+          className="w-full flex items-center justify-between gap-2 px-1.5 py-1.5 rounded-lg hover:bg-purple-50 transition-colors text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600"
           title="Edit your name, Gmail, semester, and level"
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -182,10 +183,10 @@ export function Sidebar({
                 alt={displayName}
                 referrerPolicy="no-referrer"
                 onError={() => setImgError(true)}
-                className="h-9 w-9 rounded-full object-cover border border-violet-200 shrink-0"
+                className="h-9 w-9 rounded-full object-cover border border-purple-200 shrink-0"
               />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-semibold shrink-0 border border-violet-200">
+              <div className="h-9 w-9 rounded-full bg-purple-100 text-purple-900 flex items-center justify-center text-xs font-semibold shrink-0 border border-purple-200">
                 {initials}
               </div>
             )}
@@ -203,43 +204,68 @@ export function Sidebar({
               )}
             </div>
           </div>
-          <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-violet-700 shrink-0" />
+          <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-purple-700 shrink-0" />
         </button>
 
-        <div className="flex items-center justify-between gap-1 px-1">
-          <button
-            type="button"
-            onClick={onToggleSound}
-            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 py-1.5 px-2 rounded-md hover:bg-violet-50 transition-colors whitespace-nowrap"
-          >
-            {soundEnabled ? (
-              <Volume2 className="h-3.5 w-3.5 text-violet-600" />
-            ) : (
-              <VolumeX className="h-3.5 w-3.5 text-slate-400" />
-            )}
-            <span>{soundEnabled ? "Chime" : "Muted"}</span>
-          </button>
+        {confirmClear ? (
+          <div className="p-2 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-between gap-2 text-xs">
+            <span className="text-purple-950 font-medium">Clear all data?</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setConfirmClear(false)}
+                className="px-2 py-1 rounded text-slate-600 hover:bg-white"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClearWorkspaceData();
+                  setConfirmClear(false);
+                }}
+                className="px-2 py-1 rounded bg-red-600 text-white font-medium hover:bg-red-700"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-1 px-1">
+            <button
+              type="button"
+              onClick={onToggleSound}
+              className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-purple-900 py-1.5 px-2 rounded-md hover:bg-purple-50 transition-colors whitespace-nowrap"
+            >
+              {soundEnabled ? (
+                <Volume2 className="h-3.5 w-3.5 text-purple-700" />
+              ) : (
+                <VolumeX className="h-3.5 w-3.5 text-slate-400" />
+              )}
+              <span>{soundEnabled ? "Chime" : "Muted"}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={onResetDemoData}
-            title="Restore sample semester data"
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 py-1.5 px-2 rounded-md hover:bg-slate-100 transition-colors whitespace-nowrap"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Reset</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setConfirmClear(true)}
+              title="Clear workspace data and start fresh"
+              className="flex items-center gap-1 text-xs text-slate-500 hover:text-purple-900 py-1.5 px-2 rounded-md hover:bg-purple-50 transition-colors whitespace-nowrap"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Clear</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={onSignOut}
-            title="Sign out of Termflow"
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-700 py-1.5 px-2 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Sign out</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onSignOut}
+              title="Sign out of Termflow"
+              className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-700 py-1.5 px-2 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign out</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -255,7 +281,7 @@ export function Sidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/30"
+            className="fixed inset-0 bg-purple-950/60"
             onClick={onCloseMobile}
             aria-hidden="true"
           />

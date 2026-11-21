@@ -46,8 +46,8 @@ export class ErrorBoundary extends Component<
       }
 
       return (
-        <div className="min-h-screen bg-[#faf9fd] flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white border border-violet-200 rounded-xl p-6 space-y-4">
+        <div className="min-h-screen bg-[#4c1d95] flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white border border-purple-200 rounded-xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3 text-red-700">
               <div className="h-9 w-9 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5" />
@@ -62,14 +62,14 @@ export class ErrorBoundary extends Component<
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 break-words">
+            <div className="p-3 rounded-lg bg-purple-50/60 border border-purple-200 text-xs font-mono text-slate-700 break-words">
               {parsedError || this.state.errorMessage}
             </div>
 
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="w-full py-2.5 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 transition-colors flex items-center justify-center gap-2"
             >
               <RotateCcw className="h-4 w-4" />
               <span>Reload Termflow</span>

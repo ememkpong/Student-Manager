@@ -153,10 +153,10 @@ export function WeeklySpendingChart({
     weeklyBudgetTotal > 0 && weeklySpentTotal > weeklyBudgetTotal;
 
   return (
-    <section className="bg-white border border-violet-200/80 rounded-xl p-5 space-y-4">
+    <section className="bg-white border border-purple-200 rounded-xl p-5 space-y-4 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-base font-semibold text-slate-900">
+          <h2 className="font-display text-base font-semibold text-purple-950">
             Weekly Spending vs. Daily Limit
           </h2>
           <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
@@ -169,14 +169,14 @@ export function WeeklySpendingChart({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 p-1 bg-violet-50 rounded-lg">
+          <div className="flex items-center gap-1 p-1 bg-purple-50 rounded-lg border border-purple-100">
             <button
               type="button"
               onClick={() => setRangeMode("rolling")}
               className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                 rangeMode === "rolling"
-                  ? "bg-white text-violet-950 shadow-sm"
-                  : "text-slate-600 hover:text-violet-900"
+                  ? "bg-purple-700 text-white shadow-sm"
+                  : "text-purple-900 hover:bg-white"
               }`}
             >
               Last 7 Days
@@ -186,8 +186,8 @@ export function WeeklySpendingChart({
               onClick={() => setRangeMode("calendar")}
               className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                 rangeMode === "calendar"
-                  ? "bg-white text-violet-950 shadow-sm"
-                  : "text-slate-600 hover:text-violet-900"
+                  ? "bg-purple-700 text-white shadow-sm"
+                  : "text-purple-900 hover:bg-white"
               }`}
             >
               This Week
@@ -197,7 +197,7 @@ export function WeeklySpendingChart({
           <button
             type="button"
             onClick={onNavigateToMoney}
-            className="text-xs font-medium text-violet-700 hover:text-violet-900 whitespace-nowrap"
+            className="text-xs font-medium text-purple-700 hover:text-purple-900 whitespace-nowrap"
           >
             Open Ledger →
           </button>

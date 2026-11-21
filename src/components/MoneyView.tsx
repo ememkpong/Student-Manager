@@ -182,8 +182,8 @@ export function MoneyView({
     <div className="space-y-6">
       {/* 4-Column Financial Summary */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Monthly Budget Remaining (NGN)
           </div>
           <div
@@ -198,8 +198,8 @@ export function MoneyView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Spent This Month
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
@@ -214,8 +214,8 @@ export function MoneyView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Income & Stipends
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-green-700 tabular-nums">
@@ -229,11 +229,11 @@ export function MoneyView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Safe Daily Spend
           </div>
-          <div className="mt-2 font-mono text-2xl font-semibold text-violet-700 tabular-nums">
+          <div className="mt-2 font-mono text-2xl font-semibold text-purple-800 tabular-nums">
             {formatCurrency(monthStats.safeDaily)}
           </div>
           <div className="mt-1 text-xs text-slate-500 tabular-nums">
@@ -245,10 +245,10 @@ export function MoneyView({
       {/* Category Budgets + Recurring Bills */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Category Budgets */}
-        <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+        <section className="lg:col-span-7 bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-purple-100 flex items-center justify-between gap-4">
             <div>
-              <h2 className="font-display text-base font-semibold text-slate-900">
+              <h2 className="font-display text-base font-semibold text-purple-950">
                 Category Budgets
               </h2>
               <p className="text-xs text-slate-500">
@@ -316,7 +316,7 @@ export function MoneyView({
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700"
+                  className="px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-medium hover:bg-purple-800"
                 >
                   Save Budget Limits
                 </button>
@@ -381,10 +381,10 @@ export function MoneyView({
         </section>
 
         {/* Recurring Bills */}
-        <section className="lg:col-span-5 bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+        <section className="lg:col-span-5 bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-purple-100 flex items-center justify-between gap-4">
             <div>
-              <h2 className="font-display text-base font-semibold text-slate-900">
+              <h2 className="font-display text-base font-semibold text-purple-950">
                 Recurring Bills
               </h2>
               <p className="text-xs text-slate-500">
@@ -450,7 +450,7 @@ export function MoneyView({
               </div>
               <button
                 type="submit"
-                className="w-full py-1.5 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800"
+                className="w-full py-1.5 text-xs font-medium bg-purple-700 text-white rounded-lg hover:bg-purple-800"
               >
                 Save Recurring Bill
               </button>
@@ -522,10 +522,10 @@ export function MoneyView({
       </div>
 
       {/* Transaction Ledger */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <section className="bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-purple-100 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="font-display text-base font-semibold text-slate-900">
+            <h2 className="font-display text-base font-semibold text-purple-950">
               Money Ledger
             </h2>
             <p className="text-xs text-slate-500">
@@ -536,7 +536,7 @@ export function MoneyView({
             <button
               type="button"
               onClick={handleDownloadCsv}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 text-xs font-medium text-purple-900 hover:bg-purple-50 whitespace-nowrap"
             >
               <Download className="h-3.5 w-3.5" />
               <span>Download CSV</span>
@@ -544,7 +544,7 @@ export function MoneyView({
             <button
               type="button"
               onClick={() => setShowTxForm((v) => !v)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-purple-700 text-white text-xs font-medium hover:bg-purple-800 whitespace-nowrap"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{showTxForm ? "Close" : "Log Transaction"}</span>
@@ -642,7 +642,7 @@ export function MoneyView({
             <div className="sm:col-span-1">
               <button
                 type="submit"
-                className="w-full py-2 px-3 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800"
+                className="w-full py-2 px-3 rounded-lg bg-purple-700 text-white text-xs font-medium hover:bg-purple-800"
               >
                 Save
               </button>
@@ -651,8 +651,8 @@ export function MoneyView({
         )}
 
         {/* Filters Row */}
-        <div className="px-5 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+        <div className="px-5 py-3 border-b border-purple-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1 p-1 bg-purple-50 border border-purple-100 rounded-lg">
             {(["all", "expense", "income"] as const).map((t) => (
               <button
                 key={t}
@@ -660,8 +660,8 @@ export function MoneyView({
                 onClick={() => setTypeFilter(t)}
                 className={`px-3 py-1 text-xs font-medium rounded-md capitalize ${
                   typeFilter === t
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-purple-900 hover:bg-white"
                 }`}
               >
                 {t === "all" ? "All Entries" : `${t}s`}

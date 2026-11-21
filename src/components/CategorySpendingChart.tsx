@@ -152,10 +152,10 @@ export function CategorySpendingChart({
   }, [transactions, currentPrefix, prevPrefix]);
 
   return (
-    <section className="bg-white border border-violet-200/80 rounded-xl p-5 space-y-4">
+    <section className="bg-white border border-purple-200 rounded-xl p-5 space-y-4 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-base font-semibold text-slate-900">
+          <h2 className="font-display text-base font-semibold text-purple-950">
             Monthly Spending by Category
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -166,7 +166,7 @@ export function CategorySpendingChart({
         <button
           type="button"
           onClick={onNavigateToMoney}
-          className="text-xs font-medium text-violet-700 hover:text-violet-900 whitespace-nowrap self-start sm:self-center"
+          className="text-xs font-medium text-purple-700 hover:text-purple-900 whitespace-nowrap self-start sm:self-center"
         >
           Category Breakdown →
         </button>

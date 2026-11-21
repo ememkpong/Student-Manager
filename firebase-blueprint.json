@@ -590,6 +590,79 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "AcademicGoal": {
+      "title": "AcademicGoal",
+      "description": "Long-term semester academic goal with quantitative progress tracking.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 32
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "currentValue": {
+          "type": "number"
+        },
+        "targetValue": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "targetDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "currentValue",
+        "targetValue",
+        "unit",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -624,6 +697,10 @@
     "/users/{userId}/bills/{billId}": {
       "schema": { "$ref": "#/entities/RecurringBill" },
       "description": "User-owned recurring monthly bills."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/AcademicGoal" },
+      "description": "User-owned long-term semester academic goals and progress bars."
     }
   }
 }

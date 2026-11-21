@@ -226,9 +226,9 @@ export function ScheduleView({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
       {/* Left: Activity Inputs & AI Generator Controls */}
-      <section className="xl:col-span-4 bg-white border border-slate-200 rounded-xl p-5 space-y-5">
+      <section className="xl:col-span-4 bg-white border border-purple-200 rounded-xl p-5 space-y-5 shadow-sm">
         <div>
-          <h2 className="font-display text-base font-semibold text-slate-900">
+          <h2 className="font-display text-base font-semibold text-purple-950">
             Activity Schedule Builder
           </h2>
           <p className="text-xs text-slate-500 mt-1">
@@ -260,7 +260,7 @@ export function ScheduleView({
             <button
               type="button"
               onClick={() => setShowActForm((v) => !v)}
-              className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800"
+              className="flex items-center gap-1 text-xs font-medium text-purple-700 hover:text-purple-900"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{showActForm ? "Close" : "Add Activity"}</span>
@@ -270,7 +270,7 @@ export function ScheduleView({
           {showActForm && (
             <form
               onSubmit={handleAddActivitySubmit}
-              className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2.5"
+              className="p-3 bg-purple-50/70 border border-purple-200 rounded-lg space-y-2.5"
             >
               <input
                 type="text"
@@ -329,7 +329,7 @@ export function ScheduleView({
               </div>
               <button
                 type="submit"
-                className="w-full py-1.5 text-xs font-medium bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                className="w-full py-1.5 text-xs font-medium bg-purple-700 text-white rounded-md hover:bg-purple-800"
               >
                 Save Activity
               </button>
@@ -490,7 +490,7 @@ export function ScheduleView({
           type="button"
           disabled={isGenerating}
           onClick={handleGenerate}
-          className="w-full py-2.5 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 rounded-lg bg-purple-700 text-white text-sm font-medium hover:bg-purple-800 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
         >
           <Sparkles className="h-4 w-4" />
           <span>
@@ -500,17 +500,17 @@ export function ScheduleView({
       </section>
 
       {/* Right: Timetable Output & Interactive Controls */}
-      <section className="xl:col-span-8 bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <section className="xl:col-span-8 bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-purple-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            <div className="flex items-center gap-1 p-1 bg-purple-50 border border-purple-100 rounded-lg">
               <button
                 type="button"
                 onClick={() => setViewMode("day")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   viewMode === "day"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-purple-900 hover:bg-white"
                 }`}
               >
                 Day View
@@ -520,8 +520,8 @@ export function ScheduleView({
                 onClick={() => setViewMode("week")}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   viewMode === "week"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-purple-900 hover:bg-white"
                 }`}
               >
                 Week Grid
@@ -537,8 +537,8 @@ export function ScheduleView({
                     onClick={() => setSelectedDay(day)}
                     className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                       selectedDay === day
-                        ? "bg-violet-600 text-white"
-                        : "text-slate-600 hover:bg-slate-100"
+                        ? "bg-purple-700 text-white"
+                        : "text-slate-600 hover:bg-purple-50"
                     }`}
                   >
                     {day}
@@ -697,8 +697,8 @@ export function ScheduleView({
                       aria-label={`Toggle ${block.title}`}
                       className={`mt-0.5 h-5 w-5 rounded border flex items-center justify-center shrink-0 ${
                         block.completed
-                          ? "bg-violet-600 border-violet-600 text-white"
-                          : "border-slate-300 bg-white hover:border-violet-600"
+                          ? "bg-purple-700 border-purple-700 text-white"
+                          : "border-purple-300 bg-white hover:border-purple-600"
                       }`}
                     >
                       {block.completed && <Check className="h-3.5 w-3.5" />}

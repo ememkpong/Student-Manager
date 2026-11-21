@@ -42,6 +42,7 @@ export default function App() {
     transactions,
     budgetLimits,
     bills,
+    goals,
     soundEnabled,
     browserAlertsEnabled,
   } = workspace;
@@ -58,12 +59,12 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-[#faf9fd] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#4c1d95] flex items-center justify-center p-6">
         <div className="text-center space-y-2">
-          <div className="font-display text-xl font-bold text-violet-950">
+          <div className="font-display text-2xl font-bold text-white tracking-tight">
             Termflow
           </div>
-          <div className="text-xs text-slate-500">Checking your session...</div>
+          <div className="text-xs text-purple-200">Checking your session...</div>
         </div>
       </div>
     );
@@ -75,12 +76,12 @@ export default function App() {
 
   if (!workspaceReady) {
     return (
-      <div className="min-h-screen bg-[#faf9fd] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#4c1d95] flex items-center justify-center p-6">
         <div className="text-center space-y-2">
-          <div className="font-display text-xl font-bold text-violet-950">
+          <div className="font-display text-2xl font-bold text-white tracking-tight">
             Termflow
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-purple-200">
             Loading your saved student workspace...
           </div>
         </div>
@@ -165,7 +166,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#faf9fd] text-slate-900">
+    <div className="min-h-screen flex bg-[#4c1d95] text-slate-900">
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -173,7 +174,7 @@ export default function App() {
         openTasksCount={tasks.filter((t) => !t.completed).length}
         soundEnabled={soundEnabled}
         onToggleSound={() => void workspace.toggleSound()}
-        onResetDemoData={() => void workspace.resetDemoData()}
+        onClearWorkspaceData={() => void workspace.clearWorkspaceData()}
         profile={profile}
         onEditProfile={() => setProfileModalOpen(true)}
         onSignOut={() => void workspace.handleSignOut()}
@@ -203,6 +204,7 @@ export default function App() {
               tasks={tasks}
               transactions={transactions}
               budgetLimits={budgetLimits}
+              goals={goals}
               activeAlerts={activeAlerts}
               onNavigate={setActiveTab}
               onToggleBlockComplete={(id) =>
@@ -210,6 +212,12 @@ export default function App() {
               }
               onToggleTaskComplete={(id) => void workspace.toggleTask(id)}
               onQuickAddTask={handleQuickAddTask}
+              onAddGoal={(goal) => void workspace.addGoal(goal)}
+              onUpdateGoalProgress={(id, nextVal, explicitCompleted) =>
+                void workspace.updateGoalProgress(id, nextVal, explicitCompleted)
+              }
+              onUpdateGoal={(goal) => void workspace.updateGoal(goal)}
+              onDeleteGoal={(id) => void workspace.deleteGoal(id)}
             />
           )}
 

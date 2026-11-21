@@ -250,6 +250,23 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidAcademicGoal(data, userId, goalId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'currentValue', 'targetValue', 'unit', 'completed', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'title', 'courseCode', 'description', 'currentValue', 'targetValue', 'unit', 'targetDate', 'completed', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == goalId
+        && isValidId(data.ownerId) && data.ownerId == userId && data.ownerId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 160
+        && (!('courseCode' in data) || (data.courseCode is string && data.courseCode.size() <= 32))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 300))
+        && data.currentValue is number && data.currentValue >= 0 && data.currentValue <= 100000
+        && data.targetValue is number && data.targetValue >= 1 && data.targetValue <= 100000
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 32
+        && (!('targetDate' in data) || isValidISODate(data.targetDate))
+        && data.completed is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // --- Collection Rules ---
     match /users/{userId} {
       allow get: if isVerified() && isOwner(userId) && isValidId(userId);
@@ -490,6 +507,37 @@ service cloud.firestore {
           );
 
         allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(billId);
+      }
+
+      match /goals/{goalId} {
+        allow get: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(goalId);
+        allow list: if isVerified() && isOwner(userId) && existing().ownerId == request.auth.uid;
+
+        allow create: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(goalId)
+          && isValidAcademicGoal(incoming(), userId, goalId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userDocExists(userId);
+
+        allow update: if isVerified()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(goalId)
+          && isValidAcademicGoal(incoming(), userId, goalId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userDocExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['currentValue', 'completed', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'courseCode', 'description', 'currentValue', 'targetValue', 'unit', 'targetDate', 'completed', 'updatedAt'])
+          );
+
+        allow delete: if isVerified() && isOwner(userId) && isValidId(userId) && isValidId(goalId);
       }
     }
   }

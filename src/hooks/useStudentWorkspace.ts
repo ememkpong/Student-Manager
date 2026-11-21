@@ -3,6 +3,7 @@ import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -16,13 +17,6 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import {
-  createInitialActivities,
-  createInitialBills,
-  createInitialClasses,
-  createInitialSchedule,
-  createInitialTasks,
-  createInitialTransactions,
-  DEFAULT_ACTIVITIES_PROMPT,
   DEFAULT_BUDGET_LIMITS,
   DEFAULT_PREFERENCES,
 } from "../data/defaultData";
@@ -46,6 +40,7 @@ import {
   sanitizePreferences,
 } from "../firebase";
 import type {
+  AcademicGoal,
   ActivityRequest,
   BudgetLimits,
   RecurringBill,
@@ -81,10 +76,9 @@ export function useStudentWorkspace() {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bills, setBills] = useState<RecurringBill[]>([]);
+  const [goals, setGoals] = useState<AcademicGoal[]>([]);
 
-  const [activitiesPrompt, setActivitiesPromptState] = useState<string>(
-    DEFAULT_ACTIVITIES_PROMPT
-  );
+  const [activitiesPrompt, setActivitiesPromptState] = useState<string>("");
   const [scheduleSummary, setScheduleSummaryState] = useState<string>("");
   const [preferences, setPreferencesState] =
     useState<SchedulePreferences>(DEFAULT_PREFERENCES);
@@ -118,154 +112,36 @@ export function useStudentWorkspace() {
         setScheduleBlocks([]);
         setTransactions([]);
         setBills([]);
+        setGoals([]);
+        setActivitiesPromptState("");
+        setScheduleSummaryState("");
         setWorkspaceReady(false);
       }
     });
     return () => unsub();
   }, []);
 
-  // Bootstrap user profile & seed initial student workspace if first visit, then subscribe
+  // Bootstrap clean student workspace if first visit, then subscribe
   useEffect(() => {
     if (!authReady || !user) return;
     let cancelled = false;
     const uid = user.uid;
     const unsubscribers: Array<() => void> = [];
 
-    const seedStarterWorkspace = async () => {
-      const starterClasses = createInitialClasses();
-      const starterTasks = createInitialTasks();
-      const starterActivities = createInitialActivities();
-      const starterSchedule = createInitialSchedule(starterClasses);
-      const starterTransactions = createInitialTransactions();
-      const starterBills = createInitialBills();
-
-      const batch = writeBatch(db);
+    const initializeCleanWorkspace = async () => {
       const settingsRef = doc(db, "users", uid, "settings", "workspace");
-      batch.set(settingsRef, {
+      await setDoc(settingsRef, {
         ownerId: uid,
-        activitiesPrompt: clampString(DEFAULT_ACTIVITIES_PROMPT, 3000),
+        activitiesPrompt: "",
         scheduleSummary: "",
         soundEnabled: true,
         browserAlertsEnabled: false,
-        seededDemo: true,
+        seededDemo: false,
         preferences: sanitizePreferences(DEFAULT_PREFERENCES),
         budgetLimits: sanitizeBudgetLimits(DEFAULT_BUDGET_LIMITS),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-
-      for (const cls of starterClasses) {
-        const id = sanitizeId(cls.id, "cls");
-        batch.set(doc(db, "users", uid, "classes", id), {
-          id,
-          ownerId: uid,
-          code: clampString(cls.code, 32, "CLS"),
-          title: clampString(cls.title, 140, "Course"),
-          days: normalizeWeekdaysList(cls.days),
-          startTime: normalizeHHMM(cls.startTime, "09:00"),
-          endTime: normalizeHHMM(cls.endTime, "10:00"),
-          location: clampString(cls.location, 140),
-          instructor: clampString(cls.instructor, 120),
-          remindMinutesBefore: clampNumber(cls.remindMinutesBefore, 0, 240, 15),
-          remindersEnabled: Boolean(cls.remindersEnabled),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      for (const t of starterTasks) {
-        const id = sanitizeId(t.id, "tsk");
-        batch.set(doc(db, "users", uid, "tasks", id), {
-          id,
-          ownerId: uid,
-          title: clampString(t.title, 200, "Task"),
-          category: normalizeTaskCategory(t.category),
-          priority: normalizePriority(t.priority),
-          dueDate: normalizeISODate(t.dueDate, formatISODate(new Date())),
-          dueTime: normalizeHHMM(t.dueTime, "18:00"),
-          estimatedMinutes: clampNumber(t.estimatedMinutes, 5, 1440, 30),
-          ...(t.courseCode ? { courseCode: clampString(t.courseCode, 32) } : {}),
-          ...(t.notes ? { notes: clampString(t.notes, 600) } : {}),
-          completed: Boolean(t.completed),
-          remindBeforeMinutes: clampNumber(t.remindBeforeMinutes, 0, 1440, 30),
-          createdAt: normalizeISODate(t.createdAt, formatISODate(new Date())),
-          recordedAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      for (const act of starterActivities) {
-        const id = sanitizeId(act.id, "act");
-        batch.set(doc(db, "users", uid, "activities", id), {
-          id,
-          ownerId: uid,
-          title: clampString(act.title, 160, "Activity"),
-          durationMinutes: clampNumber(act.durationMinutes, 5, 720, 60),
-          frequency: clampString(act.frequency, 80, "Weekly"),
-          preferredWindow: act.preferredWindow,
-          category: normalizeBlockCategory(act.category),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      for (const blk of starterSchedule) {
-        const id = sanitizeId(blk.id, "blk");
-        batch.set(doc(db, "users", uid, "scheduleBlocks", id), {
-          id,
-          ownerId: uid,
-          title: clampString(blk.title, 180, "Block"),
-          day: normalizeWeekday(blk.day),
-          startTime: normalizeHHMM(blk.startTime, "09:00"),
-          endTime: normalizeHHMM(blk.endTime, "10:00"),
-          category: normalizeBlockCategory(blk.category),
-          ...(blk.location ? { location: clampString(blk.location, 140) } : {}),
-          ...(blk.notes ? { notes: clampString(blk.notes, 400) } : {}),
-          sourceType: blk.sourceType,
-          ...(blk.sourceId ? { sourceId: sanitizeId(blk.sourceId) } : {}),
-          completed: Boolean(blk.completed),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      for (const tx of starterTransactions) {
-        const id = sanitizeId(tx.id, "tx");
-        batch.set(doc(db, "users", uid, "transactions", id), {
-          id,
-          ownerId: uid,
-          title: clampString(tx.title, 160, "Transaction"),
-          amount: clampNumber(tx.amount, 0, 100000000, 0),
-          type: tx.type === "income" ? "income" : "expense",
-          category:
-            tx.category === "Income"
-              ? "Income"
-              : normalizeBudgetCategory(tx.category),
-          date: normalizeISODate(tx.date, formatISODate(new Date())),
-          ...(tx.notes ? { notes: clampString(tx.notes, 400) } : {}),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      for (const bill of starterBills) {
-        const id = sanitizeId(bill.id, "bill");
-        batch.set(doc(db, "users", uid, "bills", id), {
-          id,
-          ownerId: uid,
-          title: clampString(bill.title, 140, "Bill"),
-          amount: clampNumber(bill.amount, 0, 100000000, 0),
-          dueDay: clampNumber(bill.dueDay, 1, 31, 1),
-          category: normalizeBudgetCategory(bill.category),
-          ...(bill.lastPaidMonth
-            ? { lastPaidMonth: clampString(bill.lastPaidMonth, 7) }
-            : {}),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      await batch.commit();
     };
 
     const initAndSubscribe = async () => {
@@ -313,7 +189,7 @@ export function useStudentWorkspace() {
           doc(db, "users", uid, "settings", "workspace")
         );
         if (!settingsSnap.exists()) {
-          await seedStarterWorkspace();
+          await initializeCleanWorkspace();
         }
       } catch (err) {
         if (!cancelled) {
@@ -360,9 +236,7 @@ export function useStudentWorkspace() {
             if (snap.exists()) {
               const d = snap.data();
               setActivitiesPromptState(
-                typeof d.activitiesPrompt === "string"
-                  ? d.activitiesPrompt
-                  : DEFAULT_ACTIVITIES_PROMPT
+                typeof d.activitiesPrompt === "string" ? d.activitiesPrompt : ""
               );
               setScheduleSummaryState(
                 typeof d.scheduleSummary === "string" ? d.scheduleSummary : ""
@@ -574,6 +448,40 @@ export function useStudentWorkspace() {
             )
         )
       );
+
+      // Subscribe to academic goals
+      const goalsPath = `users/${uid}/goals`;
+      unsubscribers.push(
+        onSnapshot(
+          query(collection(db, "users", uid, "goals"), where("ownerId", "==", uid)),
+          (snap) => {
+            const list = snap.docs
+              .map((d) => ({ data: d.data() as AcademicGoal & TimestampedDoc }))
+              .sort((a, b) => {
+                if (a.data.completed !== b.data.completed) {
+                  return a.data.completed ? 1 : -1;
+                }
+                return toMillis(b.data.createdAt) - toMillis(a.data.createdAt);
+              })
+              .map(({ data }) => ({
+                id: data.id,
+                title: data.title,
+                ...(data.courseCode ? { courseCode: data.courseCode } : {}),
+                ...(data.description ? { description: data.description } : {}),
+                currentValue: data.currentValue,
+                targetValue: data.targetValue,
+                unit: data.unit,
+                ...(data.targetDate ? { targetDate: data.targetDate } : {}),
+                completed: Boolean(data.completed),
+              }));
+            setGoals(list);
+          },
+          (err) =>
+            captureError(() =>
+              handleFirestoreError(err, OperationType.LIST, goalsPath)
+            )
+        )
+      );
     };
 
     void initAndSubscribe();
@@ -586,23 +494,26 @@ export function useStudentWorkspace() {
     };
   }, [authReady, user, captureError]);
 
-  // Throw fatal Firestore errors during render so ErrorBoundary surfaces them cleanly
   if (fatalError) {
     throw fatalError;
   }
 
-  // --- Profile & Auth Mutations ---
-  const saveProfile = async (input: {
-    name: string;
-    gmail: string;
-    semester: string;
-    level: string;
-  }) => {
+  // --- Profile, Onboarding & Auth Mutations ---
+  const saveProfile = async (
+    input: {
+      name: string;
+      gmail: string;
+      semester: string;
+      level: string;
+    },
+    initialCourses: Omit<StudentClass, "id">[] = []
+  ) => {
     if (!user) return;
     const uid = user.uid;
     const path = `users/${uid}`;
     try {
-      await updateDoc(doc(db, "users", uid), {
+      const batch = writeBatch(db);
+      batch.update(doc(db, "users", uid), {
         name: clampString(input.name, 120, "Student"),
         gmail: clampString(input.gmail, 160),
         semester: clampString(input.semester, 80),
@@ -611,6 +522,56 @@ export function useStudentWorkspace() {
         profileCompleted: true,
         updatedAt: serverTimestamp(),
       });
+
+      const baseTs = Date.now();
+      initialCourses.slice(0, 25).forEach((cls, idx) => {
+        const id = sanitizeId(`cls-${baseTs}-${idx}`);
+        const days = normalizeWeekdaysList(cls.days);
+        const startTime = normalizeHHMM(cls.startTime, "09:00");
+        const endTime = normalizeHHMM(cls.endTime, "10:00");
+        const code = clampString(cls.code, 32, "COURSE");
+        const title = clampString(cls.title, 140, "Class");
+        const location = clampString(cls.location, 140);
+        const instructor = clampString(cls.instructor, 120);
+
+        batch.set(doc(db, "users", uid, "classes", id), {
+          id,
+          ownerId: uid,
+          code,
+          title,
+          days,
+          startTime,
+          endTime,
+          location,
+          instructor,
+          remindMinutesBefore: clampNumber(cls.remindMinutesBefore, 0, 240, 15),
+          remindersEnabled: Boolean(cls.remindersEnabled),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        days.forEach((day) => {
+          const blkId = sanitizeId(`blk-${id}-${day}`);
+          batch.set(doc(db, "users", uid, "scheduleBlocks", blkId), {
+            id: blkId,
+            ownerId: uid,
+            title: clampString(`${code}: ${title}`, 180),
+            day,
+            startTime,
+            endTime,
+            category: "class",
+            ...(location ? { location } : {}),
+            ...(instructor ? { notes: clampString(instructor, 400) } : {}),
+            sourceType: "class",
+            sourceId: id,
+            completed: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        });
+      });
+
+      await batch.commit();
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, path);
     }
@@ -715,13 +676,135 @@ export function useStudentWorkspace() {
     }
   };
 
+  // --- Academic Goals CRUD ---
+  const addGoal = async (goal: Omit<AcademicGoal, "id">) => {
+    if (!user) return;
+    const uid = user.uid;
+    const id = sanitizeId(
+      `goal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    );
+    const path = `users/${uid}/goals/${id}`;
+    const targetValue = clampNumber(goal.targetValue, 1, 100000, 100);
+    const currentValue = clampNumber(goal.currentValue, 0, 100000, 0);
+    const completed = Boolean(goal.completed) || currentValue >= targetValue;
+    const cleanTargetDate =
+      goal.targetDate && /^\d{4}-\d{2}-\d{2}$/.test(goal.targetDate.trim())
+        ? goal.targetDate.trim()
+        : undefined;
+
+    try {
+      await setDoc(doc(db, "users", uid, "goals", id), {
+        id,
+        ownerId: uid,
+        title: clampString(goal.title, 160, "Semester Goal"),
+        ...(goal.courseCode?.trim()
+          ? { courseCode: clampString(goal.courseCode, 32) }
+          : {}),
+        ...(goal.description?.trim()
+          ? { description: clampString(goal.description, 300) }
+          : {}),
+        currentValue,
+        targetValue,
+        unit: clampString(goal.unit, 32, "%"),
+        ...(cleanTargetDate ? { targetDate: cleanTargetDate } : {}),
+        completed,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      captureError(() =>
+        handleFirestoreError(err, OperationType.CREATE, path)
+      );
+    }
+  };
+
+  const updateGoalProgress = async (
+    id: string,
+    nextValue: number,
+    explicitCompleted?: boolean
+  ) => {
+    if (!user) return;
+    const target = goals.find((g) => g.id === id);
+    if (!target) return;
+    const uid = user.uid;
+    const path = `users/${uid}/goals/${id}`;
+    const currentValue = clampNumber(nextValue, 0, 100000, 0);
+    const completed =
+      typeof explicitCompleted === "boolean"
+        ? explicitCompleted
+        : currentValue >= target.targetValue;
+
+    try {
+      await updateDoc(doc(db, "users", uid, "goals", id), {
+        currentValue,
+        completed,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      captureError(() =>
+        handleFirestoreError(err, OperationType.UPDATE, path)
+      );
+    }
+  };
+
+  const updateGoal = async (updated: AcademicGoal) => {
+    if (!user) return;
+    const uid = user.uid;
+    const id = sanitizeId(updated.id);
+    const path = `users/${uid}/goals/${id}`;
+    const targetValue = clampNumber(updated.targetValue, 1, 100000, 100);
+    const currentValue = clampNumber(updated.currentValue, 0, 100000, 0);
+    const completed = Boolean(updated.completed) || currentValue >= targetValue;
+    const cleanTargetDate =
+      updated.targetDate && /^\d{4}-\d{2}-\d{2}$/.test(updated.targetDate.trim())
+        ? updated.targetDate.trim()
+        : null;
+
+    try {
+      await updateDoc(doc(db, "users", uid, "goals", id), {
+        title: clampString(updated.title, 160, "Semester Goal"),
+        courseCode: updated.courseCode?.trim()
+          ? clampString(updated.courseCode, 32)
+          : deleteField(),
+        description: updated.description?.trim()
+          ? clampString(updated.description, 300)
+          : deleteField(),
+        currentValue,
+        targetValue,
+        unit: clampString(updated.unit, 32, "%"),
+        targetDate: cleanTargetDate ? cleanTargetDate : deleteField(),
+        completed,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      captureError(() =>
+        handleFirestoreError(err, OperationType.UPDATE, path)
+      );
+    }
+  };
+
+  const deleteGoal = async (id: string) => {
+    if (!user) return;
+    const uid = user.uid;
+    const path = `users/${uid}/goals/${id}`;
+    try {
+      await deleteDoc(doc(db, "users", uid, "goals", id));
+    } catch (err) {
+      captureError(() =>
+        handleFirestoreError(err, OperationType.DELETE, path)
+      );
+    }
+  };
+
   // --- Tasks CRUD ---
   const addTask = async (
     task: Omit<TodoTask, "id" | "createdAt" | "completed">
   ) => {
     if (!user) return;
     const uid = user.uid;
-    const id = sanitizeId(`tsk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`);
+    const id = sanitizeId(
+      `tsk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    );
     const path = `users/${uid}/tasks/${id}`;
     const todayISO = formatISODate(new Date());
     try {
@@ -823,7 +906,9 @@ export function useStudentWorkspace() {
   const addClass = async (cls: Omit<StudentClass, "id">) => {
     if (!user) return;
     const uid = user.uid;
-    const id = sanitizeId(`cls-${Date.now()}`);
+    const id = sanitizeId(
+      `cls-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    );
     const days = normalizeWeekdaysList(cls.days);
     const startTime = normalizeHHMM(cls.startTime, "09:00");
     const endTime = normalizeHHMM(cls.endTime, "10:00");
@@ -1041,7 +1126,9 @@ export function useStudentWorkspace() {
   const addScheduleBlock = async (block: Omit<ScheduleBlock, "id">) => {
     if (!user) return;
     const uid = user.uid;
-    const id = sanitizeId(`blk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`);
+    const id = sanitizeId(
+      `blk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    );
     const path = `users/${uid}/scheduleBlocks/${id}`;
     try {
       await setDoc(doc(db, "users", uid, "scheduleBlocks", id), {
@@ -1278,8 +1365,8 @@ export function useStudentWorkspace() {
     }
   };
 
-  // --- Reset Demo Data (preserves user's saved profile info!) ---
-  const resetDemoData = async () => {
+  // --- Clear Workspace Data (preserves user's saved profile info!) ---
+  const clearWorkspaceData = async () => {
     if (!user) return;
     const uid = user.uid;
     const subcols = [
@@ -1289,6 +1376,7 @@ export function useStudentWorkspace() {
       "scheduleBlocks",
       "transactions",
       "bills",
+      "goals",
     ] as const;
 
     try {
@@ -1307,117 +1395,14 @@ export function useStudentWorkspace() {
         await delBatch.commit();
       }
 
-      const freshClasses = createInitialClasses();
-      const freshTasks = createInitialTasks();
-      const freshActivities = createInitialActivities();
-      const freshSchedule = createInitialSchedule(freshClasses);
-      const freshTransactions = createInitialTransactions();
-      const freshBills = createInitialBills();
-
-      const batch = writeBatch(db);
-      batch.update(doc(db, "users", uid, "settings", "workspace"), {
-        activitiesPrompt: clampString(DEFAULT_ACTIVITIES_PROMPT, 3000),
+      await updateDoc(doc(db, "users", uid, "settings", "workspace"), {
+        activitiesPrompt: "",
         scheduleSummary: "",
         preferences: sanitizePreferences(DEFAULT_PREFERENCES),
         budgetLimits: sanitizeBudgetLimits(DEFAULT_BUDGET_LIMITS),
-        seededDemo: true,
+        seededDemo: false,
         updatedAt: serverTimestamp(),
       });
-
-      freshClasses.forEach((cls) => {
-        const id = sanitizeId(cls.id, "cls");
-        batch.set(doc(db, "users", uid, "classes", id), {
-          ...cls,
-          id,
-          ownerId: uid,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      freshTasks.forEach((t) => {
-        const id = sanitizeId(t.id, "tsk");
-        batch.set(doc(db, "users", uid, "tasks", id), {
-          id,
-          ownerId: uid,
-          title: t.title,
-          category: t.category,
-          priority: t.priority,
-          dueDate: t.dueDate,
-          dueTime: t.dueTime,
-          estimatedMinutes: t.estimatedMinutes,
-          ...(t.courseCode ? { courseCode: t.courseCode } : {}),
-          ...(t.notes ? { notes: t.notes } : {}),
-          completed: t.completed,
-          remindBeforeMinutes: t.remindBeforeMinutes,
-          createdAt: t.createdAt,
-          recordedAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      freshActivities.forEach((act) => {
-        const id = sanitizeId(act.id, "act");
-        batch.set(doc(db, "users", uid, "activities", id), {
-          ...act,
-          id,
-          ownerId: uid,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      freshSchedule.forEach((blk) => {
-        const id = sanitizeId(blk.id, "blk");
-        batch.set(doc(db, "users", uid, "scheduleBlocks", id), {
-          id,
-          ownerId: uid,
-          title: blk.title,
-          day: blk.day,
-          startTime: blk.startTime,
-          endTime: blk.endTime,
-          category: blk.category,
-          ...(blk.location ? { location: blk.location } : {}),
-          ...(blk.notes ? { notes: blk.notes } : {}),
-          sourceType: blk.sourceType,
-          ...(blk.sourceId ? { sourceId: blk.sourceId } : {}),
-          completed: Boolean(blk.completed),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      freshTransactions.forEach((tx) => {
-        const id = sanitizeId(tx.id, "tx");
-        batch.set(doc(db, "users", uid, "transactions", id), {
-          id,
-          ownerId: uid,
-          title: tx.title,
-          amount: tx.amount,
-          type: tx.type,
-          category: tx.category,
-          date: tx.date,
-          ...(tx.notes ? { notes: tx.notes } : {}),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      freshBills.forEach((bill) => {
-        const id = sanitizeId(bill.id, "bill");
-        batch.set(doc(db, "users", uid, "bills", id), {
-          id,
-          ownerId: uid,
-          title: bill.title,
-          amount: bill.amount,
-          dueDay: bill.dueDay,
-          category: bill.category,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-
-      await batch.commit();
     } catch (err) {
       captureError(() =>
         handleFirestoreError(err, OperationType.WRITE, `users/${uid}`)
@@ -1440,6 +1425,7 @@ export function useStudentWorkspace() {
     transactions,
     budgetLimits,
     bills,
+    goals,
     soundEnabled,
     browserAlertsEnabled,
     saveProfile,
@@ -1449,6 +1435,10 @@ export function useStudentWorkspace() {
     setBudgetLimits,
     toggleSound,
     setBrowserAlerts,
+    addGoal,
+    updateGoalProgress,
+    updateGoal,
+    deleteGoal,
     addTask,
     addMultipleTasks,
     toggleTask,
@@ -1468,6 +1458,6 @@ export function useStudentWorkspace() {
     addBill,
     payBill,
     deleteBill,
-    resetDemoData,
+    clearWorkspaceData,
   };
 }

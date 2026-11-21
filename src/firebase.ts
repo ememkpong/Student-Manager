@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { doc, getDocFromServer, getFirestore } from "firebase/firestore";
-import firebaseConfig from "../firebase-applet-config.json";
 import type {
   BlockCategory,
   BudgetCategoryName,
@@ -12,8 +11,38 @@ import type {
   Weekday,
 } from "./types";
 
+interface FirebaseAppletConfig {
+  projectId: string;
+  appId: string;
+  apiKey: string;
+  authDomain: string;
+  firestoreDatabaseId?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+}
+
+const localConfigModules = import.meta.glob<{ default: FirebaseAppletConfig }>(
+  "../firebase-applet-config.json",
+  { eager: true }
+);
+
+const firebaseConfig: FirebaseAppletConfig = localConfigModules[
+  "../firebase-applet-config.json"
+]?.default ?? {
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  firestoreDatabaseId:
+    import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+};
+
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = firebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
@@ -206,14 +235,15 @@ export function sanitizePreferences(prefs: SchedulePreferences): SchedulePrefere
 export function sanitizeBudgetLimits(limits: BudgetLimits): BudgetLimits {
   const cats = limits.categories || ({} as Record<BudgetCategoryName, number>);
   return {
-    monthlyCap: clampNumber(limits.monthlyCap, 0, 100000000, 180000),
+    monthlyCap: clampNumber(limits.monthlyCap, 0, 100000000, 0),
     categories: {
-      "Dining & Groceries": clampNumber(cats["Dining & Groceries"], 0, 100000000, 55000),
-      "Housing & Utilities": clampNumber(cats["Housing & Utilities"], 0, 100000000, 65000),
-      "Textbooks & Study": clampNumber(cats["Textbooks & Study"], 0, 100000000, 22000),
-      Transit: clampNumber(cats["Transit"], 0, 100000000, 16000),
-      "Personal & Leisure": clampNumber(cats["Personal & Leisure"], 0, 100000000, 14000),
-      Other: clampNumber(cats["Other"], 0, 100000000, 8000),
+      "Dining & Groceries": clampNumber(cats["Dining & Groceries"], 0, 100000000, 0),
+      "Housing & Utilities": clampNumber(cats["Housing & Utilities"], 0, 100000000, 0),
+      "Textbooks & Study": clampNumber(cats["Textbooks & Study"], 0, 100000000, 0),
+      Transit: clampNumber(cats["Transit"], 0, 100000000, 0),
+      "Personal & Leisure": clampNumber(cats["Personal & Leisure"], 0, 100000000, 0),
+      Other: clampNumber(cats["Other"], 0, 100000000, 0),
     },
   };
 }
+

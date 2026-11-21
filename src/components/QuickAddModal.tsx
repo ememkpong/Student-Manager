@@ -139,22 +139,22 @@ export function QuickAddModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-purple-950/60 backdrop-blur-xs p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden"
+        className="w-full max-w-lg bg-white border border-purple-200 rounded-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h2 className="font-display text-base font-semibold text-slate-900">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-purple-100 bg-purple-50/70">
+          <h2 className="font-display text-base font-semibold text-purple-950">
             Quick Add
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md"
+            className="p-1.5 text-slate-400 hover:text-purple-800 rounded-md"
           >
             <X className="h-4 w-4" />
           </button>
@@ -162,7 +162,7 @@ export function QuickAddModal({
 
         {/* Segmented Type Selector */}
         <div className="px-5 pt-4">
-          <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-lg">
+          <div className="grid grid-cols-4 gap-1 p-1 bg-purple-50 border border-purple-100 rounded-lg">
             {(
               [
                 { id: "task", label: "To-Do" },
@@ -177,8 +177,8 @@ export function QuickAddModal({
                 onClick={() => setKind(item.id)}
                 className={`py-1.5 px-2 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   kind === item.id
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-purple-900 hover:bg-white"
                 }`}
               >
                 {item.label}
@@ -434,8 +434,8 @@ export function QuickAddModal({
                         onClick={() => toggleDay(day)}
                         className={`px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors ${
                           selected
-                            ? "bg-violet-600 text-white border-violet-600"
-                            : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                            ? "bg-purple-700 text-white border-purple-700"
+                            : "bg-white text-slate-600 border-purple-200 hover:bg-purple-50"
                         }`}
                       >
                         {day}
@@ -585,17 +585,17 @@ export function QuickAddModal({
             </>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-purple-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-900 rounded-lg hover:bg-purple-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 rounded-lg transition-colors"
             >
               Save {kind === "task" ? "Task" : kind === "money" ? "Entry" : kind === "class" ? "Class" : "Activity"}
             </button>

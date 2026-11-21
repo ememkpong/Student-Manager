@@ -129,8 +129,8 @@ export function ClassesView({
     <div className="space-y-6">
       {/* 4-Column Summary Strip */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Enrolled Courses
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
@@ -141,8 +141,8 @@ export function ClassesView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Today&apos;s Sessions ({todayWd})
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
@@ -155,8 +155,8 @@ export function ClassesView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">
             Class Reminders
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
@@ -167,14 +167,14 @@ export function ClassesView({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="text-xs font-medium text-slate-500">Next Class</div>
+        <div className="bg-white border border-purple-200 rounded-xl p-5 shadow-sm">
+          <div className="text-xs font-medium text-purple-700">Next Class</div>
           {nextClass ? (
             <>
               <div className="mt-2 font-display text-lg font-semibold text-slate-900 truncate">
                 {nextClass.cls.code}
               </div>
-              <div className="mt-1 font-mono text-xs text-violet-700 tabular-nums">
+              <div className="mt-1 font-mono text-xs text-purple-700 tabular-nums">
                 {nextClass.countdownText}
               </div>
             </>
@@ -185,10 +185,10 @@ export function ClassesView({
       </section>
 
       {/* Today's Class Agenda */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+      <section className="bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-purple-100 flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-display text-base font-semibold text-slate-900">
+            <h2 className="font-display text-base font-semibold text-purple-950">
               Today&apos;s Classes ({todayWd})
             </h2>
             <p className="text-xs text-slate-500">
@@ -201,7 +201,7 @@ export function ClassesView({
               resetForm();
               setShowForm((v) => !v);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-700 text-white text-xs font-medium hover:bg-purple-800 whitespace-nowrap"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{showForm ? "Close Form" : "Add Class"}</span>
@@ -212,9 +212,9 @@ export function ClassesView({
         {showForm && (
           <form
             onSubmit={handleSubmit}
-            className="p-5 border-b border-slate-200 bg-slate-50/70 space-y-4"
+            className="p-5 border-b border-purple-100 bg-purple-50/60 space-y-4"
           >
-            <div className="text-xs font-semibold text-slate-800">
+            <div className="text-xs font-semibold text-purple-950">
               {editingId ? "Edit Class Details" : "Register New Class"}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -325,8 +325,8 @@ export function ClassesView({
                     onClick={() => toggleDay(day)}
                     className={`px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors ${
                       days.includes(day)
-                        ? "bg-violet-600 text-white border-violet-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                        ? "bg-purple-700 text-white border-purple-700"
+                        : "bg-white text-slate-600 border-purple-200 hover:bg-purple-50"
                     }`}
                   >
                     {day}
@@ -341,13 +341,13 @@ export function ClassesView({
                     resetForm();
                     setShowForm(false);
                   }}
-                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-purple-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800"
+                  className="px-4 py-2 text-xs font-medium text-white bg-purple-700 rounded-lg hover:bg-purple-800"
                 >
                   {editingId ? "Update Class" : "Save Class"}
                 </button>
@@ -393,9 +393,9 @@ export function ClassesView({
       </section>
 
       {/* Complete Course Timetable Table */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200">
-          <h2 className="font-display text-base font-semibold text-slate-900">
+      <section className="bg-white border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-purple-100">
+          <h2 className="font-display text-base font-semibold text-purple-950">
             All Registered Classes
           </h2>
           <p className="text-xs text-slate-500">
@@ -417,7 +417,7 @@ export function ClassesView({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium text-slate-500">
+                <tr className="border-b border-purple-100 bg-purple-50/70 text-xs font-medium text-purple-900">
                   <th className="py-3 px-5">Course</th>
                   <th className="py-3 px-4">Days</th>
                   <th className="py-3 px-4">Time</th>
@@ -426,12 +426,12 @@ export function ClassesView({
                   <th className="py-3 px-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-sm">
+              <tbody className="divide-y divide-purple-100 text-sm">
                 {classes.map((cls) => (
-                  <tr key={cls.id} className="hover:bg-slate-50/70">
+                  <tr key={cls.id} className="hover:bg-purple-50/35">
                     <td className="py-3 px-5">
                       <div className="font-medium text-slate-900">
-                        <span className="font-mono text-xs text-violet-700 mr-2">
+                        <span className="font-mono text-xs text-purple-700 mr-2">
                           {cls.code}
                         </span>
                         {cls.title}

@@ -128,3 +128,14 @@ export interface StudentProfile {
   profileCompleted: boolean;
 }
 
+export interface AcademicGoal {
+  id: string;
+  title: string;
+  courseCode?: string;
+  description?: string;
+  currentValue: number;
+  targetValue: number;
+  unit: string;
+  targetDate?: string; // YYYY-MM-DD
+  completed: boolean;
+}

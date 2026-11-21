@@ -55,7 +55,7 @@ function handleGeminiError(err: unknown): { status: number; message: string } {
   }
   return {
     status: 500,
-    message: msg || "Failed to generate response from Gemini.",
+    message: "Failed to generate response from Gemini. Please try again.",
   };
 }
 
@@ -77,12 +77,20 @@ async function startServer() {
         preferences = {},
       } = req.body ?? {};
 
+      const safeActivitiesText =
+        typeof activitiesText === "string"
+          ? activitiesText.trim().slice(0, 4000)
+          : "";
+      const safeActivitiesList = Array.isArray(activitiesList)
+        ? activitiesList.slice(0, 40)
+        : [];
+      const safeClasses = Array.isArray(classes) ? classes.slice(0, 30) : [];
+      const safeTasks = Array.isArray(tasks) ? tasks.slice(0, 50) : [];
+
       const hasActivities =
-        (typeof activitiesText === "string" && activitiesText.trim().length > 0) ||
-        (Array.isArray(activitiesList) && activitiesList.length > 0);
+        safeActivitiesText.length > 0 || safeActivitiesList.length > 0;
       const hasClassesOrTasks =
-        (Array.isArray(classes) && classes.length > 0) ||
-        (Array.isArray(tasks) && tasks.length > 0);
+        safeClasses.length > 0 || safeTasks.length > 0;
 
       if (!hasActivities && !hasClassesOrTasks) {
         res.status(400).json({
@@ -94,16 +102,34 @@ async function startServer() {
 
       const ai = getGeminiClient();
 
-      const wakeTime = preferences.wakeTime || "07:30";
-      const sleepTime = preferences.sleepTime || "23:00";
-      const breakMinutes = Number(preferences.breakMinutes) || 15;
+      const wakeTime =
+        typeof preferences.wakeTime === "string"
+          ? preferences.wakeTime.slice(0, 5)
+          : "07:30";
+      const sleepTime =
+        typeof preferences.sleepTime === "string"
+          ? preferences.sleepTime.slice(0, 5)
+          : "23:00";
+      const breakMinutes = Math.min(
+        120,
+        Math.max(0, Number(preferences.breakMinutes) || 15)
+      );
       const scope = preferences.scope === "today" ? "today" : "week";
       const weekDates = Array.isArray(preferences.weekDates)
-        ? preferences.weekDates
+        ? preferences.weekDates.slice(0, 7)
         : [];
-      const targetDay = preferences.targetDay || "Mon";
-      const targetDate = preferences.targetDate || "";
-      const focusNote = preferences.focusNote || "";
+      const targetDay =
+        typeof preferences.targetDay === "string"
+          ? preferences.targetDay.slice(0, 3)
+          : "Mon";
+      const targetDate =
+        typeof preferences.targetDate === "string"
+          ? preferences.targetDate.slice(0, 10)
+          : "";
+      const focusNote =
+        typeof preferences.focusNote === "string"
+          ? preferences.focusNote.slice(0, 500)
+          : "";
 
       const systemInstruction = [
         "You are an expert academic time-blocking assistant for university students.",
@@ -125,10 +151,10 @@ async function startServer() {
         weekDates,
         wakingHours: { wakeTime, sleepTime, breakMinutes },
         focusNote,
-        fixedClasses: classes,
-        pendingTasks: tasks,
-        requestedActivitiesText: activitiesText,
-        requestedStructuredActivities: activitiesList,
+        fixedClasses: safeClasses,
+        pendingTasks: safeTasks,
+        requestedActivitiesText: safeActivitiesText,
+        requestedStructuredActivities: safeActivitiesList,
       };
 
       const response = await ai.models.generateContent({
@@ -214,18 +240,22 @@ async function startServer() {
   app.post("/api/tasks/parse", async (req, res) => {
     try {
       const { text = "", todayDate = "", classes = [] } = req.body ?? {};
-      if (typeof text !== "string" || !text.trim()) {
+      const safeText = typeof text === "string" ? text.trim().slice(0, 4000) : "";
+      if (!safeText) {
         res.status(400).json({ error: "Please enter notes or items to organize." });
         return;
       }
+      const safeTodayDate =
+        typeof todayDate === "string" ? todayDate.slice(0, 10) : "";
+      const safeClasses = Array.isArray(classes) ? classes.slice(0, 30) : [];
 
       const ai = getGeminiClient();
 
       const response = await ai.models.generateContent({
         model: "gemini-4-hydrogen",
-        contents: `Current date: ${todayDate}\nStudent courses: ${JSON.stringify(
-          classes
-        )}\n\nParse this student brain dump into individual actionable tasks:\n${text}`,
+        contents: `Current date: ${safeTodayDate}\nStudent courses: ${JSON.stringify(
+          safeClasses
+        )}\n\nParse this student brain dump into individual actionable tasks:\n${safeText}`,
         config: {
           systemInstruction:
             "Extract every actionable to-do item from the student's text. Infer realistic category (Academic, Errand, Finance, Personal), priority (High, Medium, Low), dueDate (YYYY-MM-DD, using current date as reference), dueTime (HH:MM 24h), estimatedMinutes (integer 10-240), and matching courseCode if applicable.",
